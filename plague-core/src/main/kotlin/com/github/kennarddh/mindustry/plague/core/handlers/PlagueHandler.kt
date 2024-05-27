@@ -30,14 +30,44 @@ import kotlin.time.Duration.Companion.minutes
 
 class PlagueHandler : Handler {
     @Filter(FilterType.Action, Priority.High)
-    suspend fun actionFilter(action: Administration.PlayerAction): Boolean {
-        if (action.block != null && action.block == Blocks.powerSource) return false
+    fun powerSourceActionFilter(action: Administration.PlayerAction): Boolean {
+        return !((action.type == Administration.ActionType.breakBlock ||
+                action.type == Administration.ActionType.pickupBlock)
+                && action.block == Blocks.powerSource)
+    }
+
+    @Filter(FilterType.Action, Priority.High)
+    suspend fun survivorCoreActionFilter(action: Administration.PlayerAction): Boolean {
+
+        PlagueVars.stateLock.withLock {
+            if (PlagueVars.state != PlagueState.Prepare) return false
+        }
 
         if (action.unit == null) return true
 
-        if (action.unit.team() == Team.blue) return false
+        if (action.type != Administration.ActionType.placeBlock) return true
 
-        if (PlagueVars.state === PlagueState.Prepare) return false
+        if (action.unit.team() != Team.blue) return true
+
+        if (action.unit.player == null) return true
+
+        runOnMindustryThread {
+            val newTeam = getNewEmptyTeam()
+                ?: return@runOnMindustryThread action.unit.player.sendMessage("[scarlet]No available team.")
+
+            action.unit.player.team(newTeam)
+
+            action.tile.setNet(Blocks.coreShard, newTeam, 0)
+        }
+
+        return false
+    }
+
+    @Filter(FilterType.Action, Priority.High)
+    suspend fun buildBlockActionFilter(action: Administration.PlayerAction): Boolean {
+        if (action.unit == null) return true
+
+        if (action.unit.team() == Team.blue) return true
 
         PlagueVars.stateLock.withLock {
             if (action.unit.team() == Team.malis) {
@@ -137,24 +167,6 @@ class PlagueHandler : Handler {
         runOnMindustryThread {
             if (event.player.team() == Team.blue) {
                 spawnPlayerUnit(event.player, Team.blue)
-            }
-        }
-    }
-
-    @EventHandler
-    suspend fun onTap(event: EventType.TapEvent) {
-        PlagueVars.stateLock.withLock {
-            if (PlagueVars.state != PlagueState.Prepare) return
-        }
-
-        runOnMindustryThread {
-            if (event.player.team() == Team.blue) {
-                val newTeam = getNewEmptyTeam()
-                    ?: return@runOnMindustryThread event.player.sendMessage("[scarlet]No available team.")
-
-                event.player.team(newTeam)
-
-                event.tile.setNet(Blocks.coreShard, newTeam, 0)
             }
         }
     }
