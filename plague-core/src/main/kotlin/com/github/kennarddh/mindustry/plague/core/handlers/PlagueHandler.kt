@@ -23,6 +23,7 @@ import mindustry.core.NetServer
 import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Groups
+import mindustry.gen.Player
 import mindustry.net.Administration
 import kotlin.time.Duration.Companion.minutes
 
@@ -30,15 +31,15 @@ import kotlin.time.Duration.Companion.minutes
 class PlagueHandler : Handler {
     @Filter(FilterType.Action, Priority.High)
     suspend fun actionFilter(action: Administration.PlayerAction): Boolean {
+        if (action.block != null && action.block == Blocks.powerSource) return false
+
+        if (action.unit == null) return true
+
+        if (action.unit.team() == Team.blue) return false
+
+        if (PlagueVars.state === PlagueState.Prepare) return false
+
         PlagueVars.stateLock.withLock {
-            if (action.block != null && action.block == Blocks.powerSource) return false
-
-            if (action.unit == null) return true
-
-            if (action.unit.team() == Team.blue) return false
-
-            if (PlagueVars.state === PlagueState.Prepare) return false
-
             if (action.unit.team() == Team.malis) {
                 if (action.block != null) {
                     if (PlagueBanned.getCurrentPlagueBannedBlocks(true).contains(action.block)) {
@@ -52,9 +53,18 @@ class PlagueHandler : Handler {
                     }
                 }
             }
-
-            return true
         }
+
+        return true
+    }
+
+    @Filter(FilterType.Action, Priority.High)
+    fun respawnActionFilter(action: Administration.PlayerAction): Boolean {
+        if (action.type != Administration.ActionType.respawn) return true
+
+        if (action.player.team() == Team.blue) return false
+
+        return true
     }
 
     fun getNewEmptyTeam(): Team? {
@@ -104,23 +114,29 @@ class PlagueHandler : Handler {
         }
     }
 
+    fun spawnPlayerUnit(
+        player: Player,
+        team: Team,
+        x: Float = Vars.state.map.width / 2f * Vars.tilesize,
+        y: Float = Vars.state.map.height / 2f * Vars.tilesize
+    ) {
+        val unit = UnitTypes.gamma.create(team)
+
+        player.set(x, y)
+
+        unit.set(x, y)
+        unit.rotation(90.0f)
+        unit.impulse(0.0f, 3.0f)
+        unit.spawnedByCore(true)
+        unit.controller(player)
+        unit.add()
+    }
+
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) {
         runOnMindustryThread {
             if (event.player.team() == Team.blue) {
-                val unit = UnitTypes.gamma.create(Team.blue)
-
-                val x = Vars.state.map.width / 2f * Vars.tilesize
-                val y = Vars.state.map.height / 2f * Vars.tilesize
-
-                event.player.set(x, y)
-
-                unit.set(x, y)
-                unit.rotation(90.0f)
-                unit.impulse(0.0f, 3.0f)
-                unit.spawnedByCore(true)
-                unit.controller(event.player)
-                unit.add()
+                spawnPlayerUnit(event.player, Team.blue)
             }
         }
     }
