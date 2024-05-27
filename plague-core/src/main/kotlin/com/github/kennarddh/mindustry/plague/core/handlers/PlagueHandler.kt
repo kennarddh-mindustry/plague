@@ -13,7 +13,6 @@ import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueBanned
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueState
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueVars
-import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
@@ -132,8 +131,6 @@ class PlagueHandler : Handler {
                 ?: return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]No available team.")
 
             for (core in Team.malis.cores()) {
-                Logger.info("Dis: ${core.dst(event.tile)}")
-
                 if (core.dst(event.tile) < 50 * Vars.tilesize)
                     return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Core must be at least 50 tiles away from nearest plague's core.")
             }
