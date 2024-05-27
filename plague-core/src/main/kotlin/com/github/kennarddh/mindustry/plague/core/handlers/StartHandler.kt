@@ -52,6 +52,7 @@ class StartHandler : Handler {
             Vars.world.loadMap(map, map.applyRules(ServerControl.instance.lastMode))
 
             Vars.state.rules.canGameOver = false
+            Vars.state.rules.hideBannedBlocks = true
 
             // Remove units weapon so they have 0 damage.
             // This is a slight desync but not noticeable because on client they will see they can shoot but with 0 damage.
