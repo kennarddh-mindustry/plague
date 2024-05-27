@@ -1,15 +1,19 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
+import arc.util.Timer
+import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Command
+import com.github.kennarddh.mindustry.genesis.core.commands.senders.CommandSender
+import com.github.kennarddh.mindustry.genesis.core.commons.CoroutineScopes
 import com.github.kennarddh.mindustry.genesis.core.commons.priority.Priority
 import com.github.kennarddh.mindustry.genesis.core.commons.runOnMindustryThread
 import com.github.kennarddh.mindustry.genesis.core.events.annotations.EventHandler
 import com.github.kennarddh.mindustry.genesis.core.filters.FilterType
 import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
-import com.github.kennarddh.mindustry.genesis.core.timers.annotations.TimerTask
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueBanned
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueState
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueVars
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
 import mindustry.Vars
@@ -19,6 +23,8 @@ import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Groups
 import mindustry.net.Administration
+import kotlin.time.Duration.Companion.minutes
+
 
 class PlagueHandler : Handler {
     @Filter(FilterType.Action, Priority.High)
@@ -57,6 +63,46 @@ class PlagueHandler : Handler {
         }
     }
 
+    private val timers = mutableSetOf<Timer.Task>()
+
+    @EventHandler
+    suspend fun onPlay(event: EventType.PlayEvent) {
+        PlagueVars.stateLock.withLock {
+            PlagueVars.state = PlagueState.Prepare
+        }
+
+        Timer.schedule({
+            CoroutineScopes.Main.launch {
+                onFirstPhase()
+
+                Timer.schedule({
+                    CoroutineScopes.Main.launch {
+                        onSecondPhase()
+                    }
+
+                    Timer.schedule({
+                        CoroutineScopes.Main.launch {
+                            onEnded()
+                        }
+                    }, 15.minutes.inWholeSeconds.toFloat()).run {
+                        timers.add(this)
+                    }
+                }, 45.minutes.inWholeSeconds.toFloat()).run {
+                    timers.add(this)
+                }
+            }
+        }, 2.minutes.inWholeSeconds.toFloat()).run {
+            timers.add(this)
+        }
+    }
+
+    @EventHandler
+    fun onGameOver(event: EventType.GameOverEvent) {
+        timers.forEach {
+            it.cancel()
+        }
+    }
+
     @EventHandler
     suspend fun onTap(event: EventType.TapEvent) {
         PlagueVars.stateLock.withLock {
@@ -75,20 +121,30 @@ class PlagueHandler : Handler {
         }
     }
 
+    @Command(["state"])
+    suspend fun getState(sender: CommandSender) {
+        PlagueVars.stateLock.withLock {
+            sender.sendSuccess(PlagueVars.state.name)
+        }
+    }
+
     override suspend fun onInit() {
-        Vars.netServer.assigner = NetServer.TeamAssigner { _, _ ->
-            runBlocking {
-                PlagueVars.stateLock.withLock {
-                    if (PlagueVars.state == PlagueState.Prepare) Team.blue
+        runOnMindustryThread {
+            Vars.netServer.assigner = NetServer.TeamAssigner { _, _ ->
+                val team = runBlocking {
+                    PlagueVars.stateLock.withLock {
+                        if (PlagueVars.state == PlagueState.Prepare) return@runBlocking Team.blue
+                    }
+
+                    Team.malis
                 }
 
-                Team.malis
+                team
             }
         }
     }
 
-    @TimerTask(120f)
-    suspend fun onStart() {
+    suspend fun onFirstPhase() {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.PlayingFirstPhase
         }
@@ -105,7 +161,6 @@ class PlagueHandler : Handler {
     }
 
     // 45 minutes after onPlay move to second phase.
-    @TimerTask(120f + 45 * 60)
     suspend fun onSecondPhase() {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.PlayingSecondPhase
@@ -113,7 +168,6 @@ class PlagueHandler : Handler {
     }
 
     // 15 minutes after onSecondPhase move to ended.
-    @TimerTask(120f + 45 * 60 + 15 * 60)
     suspend fun onEnded() {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.Ended
