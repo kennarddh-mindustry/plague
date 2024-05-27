@@ -53,6 +53,7 @@ class StartHandler : Handler {
 
             Vars.state.rules.canGameOver = false
             Vars.state.rules.hideBannedBlocks = true
+            Vars.state.rules.enemyCoreBuildRadius = 0f
 
             // Remove units weapon so they have 0 damage.
             // This is a slight desync but not noticeable because on client they will see they can shoot but with 0 damage.

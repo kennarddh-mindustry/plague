@@ -1,5 +1,6 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
+import arc.math.Mathf
 import arc.util.Timer
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Command
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.CommandSender
@@ -13,6 +14,7 @@ import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueBanned
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueState
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueVars
+import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
@@ -111,6 +113,31 @@ class PlagueHandler : Handler {
         return true
     }
 
+    fun getClosestEnemyCore(team: Team, x: Float, y: Float, maxDistance: Float = Float.MAX_VALUE): CoreBuild? {
+        var closest: CoreBuild? = null
+        var closestDistance = Float.MAX_VALUE
+
+        for (activeTeam in Vars.state.teams.active) {
+            if (activeTeam == team) continue
+
+            for (core in activeTeam.cores) {
+                val distance = Mathf.dst(x, y, core.x, core.y)
+
+                Logger.info("$x $y Core ${core.x} ${core.y} $distance > $maxDistance")
+
+                if (distance > maxDistance) continue
+
+                if (closestDistance > distance) {
+                    closest = core
+
+                    closestDistance = distance
+                }
+            }
+        }
+
+        return closest
+    }
+
     @EventHandler
     suspend fun onBuildSelect(event: EventType.BuildSelectEvent) {
         PlagueVars.stateLock.withLock {
@@ -127,19 +154,36 @@ class PlagueHandler : Handler {
             if (!validPlace(Blocks.coreShard, event.tile))
                 return@runOnMindustryThread
 
-            val newTeam = getNewEmptyTeam()
-                ?: return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]No available team.")
-
             for (core in Team.malis.cores()) {
-                if (core.dst(event.tile) < 50 * Vars.tilesize)
-                    return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Core must be at least 50 tiles away from nearest plague's core.")
+                if (core.dst(event.tile) < 100 * Vars.tilesize)
+                    return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Core must be at least 100 tiles away from nearest plague's core.")
             }
 
-            event.builder.player.team(newTeam)
+            val closestEnemyCoreInRange = getClosestEnemyCore(
+                Team.derelict,
+                event.tile.x.toFloat() * Vars.tilesize,
+                event.tile.y.toFloat() * Vars.tilesize,
+                50f * Vars.tilesize
+            )
 
-            event.tile.setNet(Blocks.coreShard, newTeam, 0)
+            if (closestEnemyCoreInRange != null) {
+                // Join closest survivor core team
+                event.builder.player.team(closestEnemyCoreInRange.team)
 
-            Vars.state.teams.registerCore(event.tile.build as CoreBuild)
+                event.tile.setNet(Blocks.coreShard, closestEnemyCoreInRange.team, 0)
+
+                Vars.state.teams.registerCore(event.tile.build as CoreBuild)
+            } else {
+                // Create new team
+                val newTeam = getNewEmptyTeam()
+                    ?: return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]No available team.")
+
+                event.builder.player.team(newTeam)
+
+                event.tile.setNet(Blocks.coreShard, newTeam, 0)
+
+                Vars.state.teams.registerCore(event.tile.build as CoreBuild)
+            }
         }
     }
 
