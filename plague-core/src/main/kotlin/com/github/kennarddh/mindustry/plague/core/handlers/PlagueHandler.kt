@@ -12,6 +12,7 @@ import com.github.kennarddh.mindustry.genesis.core.filters.FilterType
 import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueBanned
+import com.github.kennarddh.mindustry.plague.core.commons.PlagueRules
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueState
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueVars
 import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
@@ -24,6 +25,7 @@ import mindustry.content.UnitTypes
 import mindustry.core.NetServer
 import mindustry.game.EventType
 import mindustry.game.Team
+import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.net.Administration
@@ -193,6 +195,13 @@ class PlagueHandler : Handler {
             PlagueVars.state = PlagueState.Prepare
         }
 
+        runOnMindustryThread {
+            // Reset rules
+            Vars.state.rules = PlagueRules.baseRules
+
+            Call.setRules(Vars.state.rules)
+        }
+
         Timer.schedule({
             CoroutineScopes.Main.launch {
                 onFirstPhase()
@@ -281,6 +290,10 @@ class PlagueHandler : Handler {
         }
 
         runOnMindustryThread {
+            Vars.state.rules.enemyCoreBuildRadius = Vars.state.map.rules().enemyCoreBuildRadius
+
+            Call.setRules(Vars.state.rules)
+
             // Move every no team player to plague team
             Groups.player.filter { it.team() === Team.blue }.forEach {
                 it.team(Team.malis)
