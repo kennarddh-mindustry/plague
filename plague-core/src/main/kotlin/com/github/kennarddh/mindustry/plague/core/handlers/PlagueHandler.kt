@@ -18,6 +18,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
 import mindustry.Vars
 import mindustry.content.Blocks
+import mindustry.content.UnitTypes
 import mindustry.core.NetServer
 import mindustry.game.EventType
 import mindustry.game.Team
@@ -104,6 +105,27 @@ class PlagueHandler : Handler {
     }
 
     @EventHandler
+    fun onPlayerJoin(event: EventType.PlayerJoin) {
+        runOnMindustryThread {
+            if (event.player.team() == Team.blue) {
+                val unit = UnitTypes.gamma.create(Team.blue)
+
+                val x = Vars.state.map.width / 2f * Vars.tilesize
+                val y = Vars.state.map.height / 2f * Vars.tilesize
+
+                event.player.set(x, y)
+
+                unit.set(x, y)
+                unit.rotation(90.0f)
+                unit.impulse(0.0f, 3.0f)
+                unit.spawnedByCore(true)
+                unit.controller(event.player)
+                unit.add()
+            }
+        }
+    }
+
+    @EventHandler
     suspend fun onTap(event: EventType.TapEvent) {
         PlagueVars.stateLock.withLock {
             if (PlagueVars.state != PlagueState.Prepare) return
@@ -154,9 +176,6 @@ class PlagueHandler : Handler {
             Groups.player.filter { it.team() === Team.blue }.forEach {
                 it.team(Team.malis)
             }
-
-            // Remove all blue core
-            Team.blue.cores().forEach { it.kill() }
         }
     }
 
