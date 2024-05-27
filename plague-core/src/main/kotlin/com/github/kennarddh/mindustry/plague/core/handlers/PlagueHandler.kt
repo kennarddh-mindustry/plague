@@ -38,7 +38,6 @@ class PlagueHandler : Handler {
 
     @Filter(FilterType.Action, Priority.High)
     suspend fun survivorCoreActionFilter(action: Administration.PlayerAction): Boolean {
-
         PlagueVars.stateLock.withLock {
             if (PlagueVars.state != PlagueState.Prepare) return false
         }
