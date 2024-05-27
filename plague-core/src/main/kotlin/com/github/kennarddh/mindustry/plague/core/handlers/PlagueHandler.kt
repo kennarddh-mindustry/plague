@@ -13,6 +13,7 @@ import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueBanned
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueState
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueVars
+import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
@@ -25,39 +26,20 @@ import mindustry.game.Team
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.net.Administration
+import mindustry.world.Block
+import mindustry.world.Tile
+import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 import kotlin.time.Duration.Companion.minutes
 
 
 class PlagueHandler : Handler {
+    private val timers = mutableSetOf<Timer.Task>()
+
     @Filter(FilterType.Action, Priority.High)
     fun powerSourceActionFilter(action: Administration.PlayerAction): Boolean {
-        return !((action.type == Administration.ActionType.breakBlock ||
-                action.type == Administration.ActionType.pickupBlock)
-                && action.block == Blocks.powerSource)
-    }
+        if (!(action.type == Administration.ActionType.breakBlock || action.type == Administration.ActionType.pickupBlock)) return true
 
-    @Filter(FilterType.Action, Priority.High)
-    suspend fun survivorCoreActionFilter(action: Administration.PlayerAction): Boolean {
-        PlagueVars.stateLock.withLock {
-            if (PlagueVars.state != PlagueState.Prepare) return false
-        }
-
-        if (action.unit == null) return true
-
-        if (action.type != Administration.ActionType.placeBlock) return true
-
-        if (action.unit.team() != Team.blue) return true
-
-        if (action.unit.player == null) return true
-
-        runOnMindustryThread {
-            val newTeam = getNewEmptyTeam()
-                ?: return@runOnMindustryThread action.unit.player.sendMessage("[scarlet]No available team.")
-
-            action.unit.player.team(newTeam)
-
-            action.tile.setNet(Blocks.coreShard, newTeam, 0)
-        }
+        if (action.block != Blocks.powerSource) return true
 
         return false
     }
@@ -103,7 +85,66 @@ class PlagueHandler : Handler {
         }
     }
 
-    private val timers = mutableSetOf<Timer.Task>()
+    fun validPlace(block: Block, tile: Tile): Boolean {
+        val offsetX: Int = -(block.size - 1) / 2
+        val offsetY: Int = -(block.size - 1) / 2
+
+        for (dx in 0..<block.size) {
+            for (dy in 0..<block.size) {
+                val wx = dx + offsetX + tile.x
+                val wy = dy + offsetY + tile.y
+
+                val checkTile = Vars.world.tile(wx, wy)
+
+                if (
+                // Empty tile
+                    checkTile == null
+                    // Deep water
+                    || checkTile.floor().isDeep
+                    // Exactly same block
+                    || (block == checkTile.block() && checkTile.build != null && block.rotate)
+                    || !checkTile.floor().placeableOn
+                )
+                    return false
+            }
+        }
+
+        return true
+    }
+
+    @EventHandler
+    suspend fun onBuildSelect(event: EventType.BuildSelectEvent) {
+        PlagueVars.stateLock.withLock {
+            if (PlagueVars.state != PlagueState.Prepare) return
+        }
+
+        if (event.builder.player == null) return
+        if (event.builder.team() != Team.blue) return
+        if (event.breaking) return
+
+        runOnMindustryThread {
+            event.tile.removeNet()
+
+            if (!validPlace(Blocks.coreShard, event.tile))
+                return@runOnMindustryThread
+
+            val newTeam = getNewEmptyTeam()
+                ?: return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]No available team.")
+
+            for (core in Team.malis.cores()) {
+                Logger.info("Dis: ${core.dst(event.tile)}")
+
+                if (core.dst(event.tile) < 50 * Vars.tilesize)
+                    return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Core must be at least 50 tiles away from nearest plague's core.")
+            }
+
+            event.builder.player.team(newTeam)
+
+            event.tile.setNet(Blocks.coreShard, newTeam, 0)
+
+            Vars.state.teams.registerCore(event.tile.build as CoreBuild)
+        }
+    }
 
     @EventHandler
     suspend fun onPlay(event: EventType.PlayEvent) {
