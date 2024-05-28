@@ -230,7 +230,7 @@ class PlagueHandler : Handler {
             if (closestEnemyCoreInRange != null) {
                 // Join closest survivor core team
                 survivorTeamsData[closestEnemyCoreInRange.team]?.playersUUID?.add(event.builder.player.uuid())
-                
+
                 runBlocking {
                     changePlayerTeam(event.builder.player, closestEnemyCoreInRange.team)
                 }
@@ -378,6 +378,13 @@ class PlagueHandler : Handler {
     override suspend fun onInit() {
         runOnMindustryThread {
             Vars.netServer.assigner = NetServer.TeamAssigner { player, _ ->
+                val lastSurvivorTeamData =
+                    survivorTeamsData.entries.find { it.value.playersUUID.contains(player.uuid()) }
+
+                if (lastSurvivorTeamData != null) {
+                    return@TeamAssigner lastSurvivorTeamData.key
+                }
+
                 runBlocking {
                     PlagueVars.stateLock.withLock {
                         if (PlagueVars.state == PlagueState.Prepare) return@runBlocking Team.blue
