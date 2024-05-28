@@ -201,7 +201,7 @@ class PlagueHandler : Handler {
 
         runOnMindustryThread {
             // Reset rules
-            Vars.state.rules = PlagueRules.baseRules
+            Vars.state.rules = PlagueRules.initRules(Vars.state.rules)
 
             Call.setRules(Vars.state.rules)
 

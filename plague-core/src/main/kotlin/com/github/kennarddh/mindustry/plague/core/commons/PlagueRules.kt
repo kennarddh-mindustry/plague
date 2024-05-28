@@ -6,8 +6,9 @@ import mindustry.game.Rules
 import mindustry.game.Team
 
 object PlagueRules {
-    val baseRules by lazy {
-        val rules = Rules()
+    fun initRules(baseRules: Rules?): Rules {
+        val rules = if (baseRules == null) Rules() else baseRules.copy()
+
         rules.canGameOver = false
         rules.hideBannedBlocks = true
         rules.enemyCoreBuildRadius = 0f
@@ -23,7 +24,7 @@ object PlagueRules {
         rules.unitWhitelist = false
         rules.blockWhitelist = false
 
-        rules
+        return rules
     }
 
     fun removeUnitsWeapons() {
