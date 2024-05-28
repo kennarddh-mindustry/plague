@@ -13,10 +13,7 @@ import com.github.kennarddh.mindustry.genesis.core.filters.FilterType
 import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.genesis.standard.extensions.setRules
-import com.github.kennarddh.mindustry.plague.core.commons.PlagueBanned
-import com.github.kennarddh.mindustry.plague.core.commons.PlagueRules
-import com.github.kennarddh.mindustry.plague.core.commons.PlagueState
-import com.github.kennarddh.mindustry.plague.core.commons.PlagueVars
+import com.github.kennarddh.mindustry.plague.core.commons.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
@@ -36,6 +33,7 @@ import mindustry.type.ItemStack
 import mindustry.world.Block
 import mindustry.world.Tile
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.minutes
 
 
@@ -43,6 +41,8 @@ class PlagueHandler : Handler {
     val monoReward = listOf(ItemStack(Items.copper, 300), ItemStack(Items.lead, 300))
 
     private val timers = mutableSetOf<Timer.Task>()
+
+    private val survivorTeamsData: MutableMap<Team, SurvivorTeamData> = ConcurrentHashMap()
 
     @Filter(FilterType.Action, Priority.High)
     fun powerSourceActionFilter(action: Administration.PlayerAction): Boolean {
@@ -241,6 +241,8 @@ class PlagueHandler : Handler {
                 val newTeam = getNewEmptyTeam()
                     ?: return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]No available team.")
 
+                survivorTeamsData[newTeam] = SurvivorTeamData(event.builder.player.uuid(), event.builder.player.uuid())
+
                 runBlocking {
                     changePlayerTeam(event.builder.player, newTeam)
                 }
@@ -297,10 +299,37 @@ class PlagueHandler : Handler {
     }
 
     @EventHandler
+    fun onPlayerLeave(event: EventType.PlayerLeave) {
+        val teamOwned = survivorTeamsData.entries.find { it.value.currentOwnerUUID == event.player.uuid() }
+
+        if (teamOwned == null) return
+
+        runOnMindustryThread {
+            val teamData = Vars.state.teams[teamOwned.key]
+
+            if (teamData.players.size == 0) {
+                survivorTeamsData[teamOwned.key]?.currentOwnerUUID = null
+
+                return@runOnMindustryThread
+            }
+
+            val newCurrentOwner = teamData.players[0]
+
+            survivorTeamsData[teamOwned.key]?.currentOwnerUUID = newCurrentOwner.uuid()
+
+            newCurrentOwner.sendMessage("[green]You are now the owner of this team because the previous owner left.")
+        }
+    }
+
+    @EventHandler
     fun onGameOver(event: EventType.GameOverEvent) {
+        survivorTeamsData.clear()
+
         timers.forEach {
             it.cancel()
         }
+
+        timers.clear()
     }
 
     fun spawnPlayerUnit(
@@ -343,16 +372,14 @@ class PlagueHandler : Handler {
 
     override suspend fun onInit() {
         runOnMindustryThread {
-            Vars.netServer.assigner = NetServer.TeamAssigner { _, _ ->
-                val team = runBlocking {
+            Vars.netServer.assigner = NetServer.TeamAssigner { player, _ ->
+                runBlocking {
                     PlagueVars.stateLock.withLock {
                         if (PlagueVars.state == PlagueState.Prepare) return@runBlocking Team.blue
                     }
 
                     Team.malis
                 }
-
-                team
             }
         }
     }
