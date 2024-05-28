@@ -23,6 +23,7 @@ object PlagueRules {
         rules.hideBannedBlocks = true
         rules.unitWhitelist = false
         rules.blockWhitelist = false
+        rules.reactorExplosions = false
 
         return rules
     }
