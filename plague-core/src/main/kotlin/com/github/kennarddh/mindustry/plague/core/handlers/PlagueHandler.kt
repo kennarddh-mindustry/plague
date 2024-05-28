@@ -87,6 +87,8 @@ class PlagueHandler : Handler {
      * To prevent this action filter is used to check if player is allowed to build or create unit
      */
     suspend fun updatePlayerSpecificRules(player: Player) {
+        if (player.team() == Team.blue) return
+
         val playerRules = Vars.state.rules.copy()
 
         if (player.team() == Team.malis) {
