@@ -34,6 +34,7 @@ object PlagueRules {
         UnitTypes.beta.weapons = Seq()
         UnitTypes.gamma.weapons = Seq()
         UnitTypes.poly.weapons = Seq()
+        UnitTypes.mega.weapons = Seq()
         UnitTypes.flare.weapons = Seq()
     }
 }
