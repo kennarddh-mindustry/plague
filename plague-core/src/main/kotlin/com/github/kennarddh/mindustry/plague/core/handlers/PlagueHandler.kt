@@ -12,6 +12,7 @@ import com.github.kennarddh.mindustry.genesis.core.events.annotations.EventHandl
 import com.github.kennarddh.mindustry.genesis.core.filters.FilterType
 import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
+import com.github.kennarddh.mindustry.genesis.standard.extensions.setRules
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueBanned
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueRules
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueState
@@ -79,12 +80,56 @@ class PlagueHandler : Handler {
         return true
     }
 
+    /**
+     * Player has their own rules
+     * This desync the player's rules with server's rules but this is fine because only the banned blocks and units are changed
+     * This is not safe by itself because with customized client or mod rules can be easily bypassed and because the server doesn't ban the block in the rules player can just build the block.
+     * To prevent this action filter is used to check if player is allowed to build or create unit
+     */
+    suspend fun updatePlayerSpecificRules(player: Player) {
+        val playerRules = Vars.state.rules.copy()
+
+        if (player.team() == Team.malis) {
+            PlagueBanned.getCurrentPlagueBannedBlocks().forEach {
+                playerRules.bannedBlocks.add(it)
+            }
+
+            PlagueBanned.getCurrentPlagueBannedUnits().forEach {
+                playerRules.bannedUnits.add(it)
+            }
+        } else {
+            PlagueBanned.getCurrentSurvivorsBannedBlocks().forEach {
+                playerRules.bannedBlocks.add(it)
+            }
+
+            PlagueBanned.getCurrentSurvivorsBannedUnits().forEach {
+                playerRules.bannedUnits.add(it)
+            }
+        }
+
+        player.setRules(playerRules)
+    }
+
+    suspend fun updateAllPlayerSpecificRules() {
+        Groups.player.forEach {
+            updatePlayerSpecificRules(it)
+        }
+    }
+
+    suspend fun changePlayerTeam(player: Player, team: Team) {
+        player.team(team)
+
+        updatePlayerSpecificRules(player)
+    }
+
     @Command(["plague"])
     fun plague(sender: PlayerCommandSender) {
         runOnMindustryThread {
-            sender.player.team(Team.malis)
+            runBlocking {
+                changePlayerTeam(sender.player, Team.malis)
 
-            sender.sendSuccess("You are now in plague team.")
+                sender.sendSuccess("You are now in plague team.")
+            }
         }
     }
 
@@ -175,7 +220,9 @@ class PlagueHandler : Handler {
 
             if (closestEnemyCoreInRange != null) {
                 // Join closest survivor core team
-                event.builder.player.team(closestEnemyCoreInRange.team)
+                runBlocking {
+                    changePlayerTeam(event.builder.player, closestEnemyCoreInRange.team)
+                }
 
                 event.tile.setNet(Blocks.coreShard, closestEnemyCoreInRange.team, 0)
 
@@ -185,7 +232,9 @@ class PlagueHandler : Handler {
                 val newTeam = getNewEmptyTeam()
                     ?: return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]No available team.")
 
-                event.builder.player.team(newTeam)
+                runBlocking {
+                    changePlayerTeam(event.builder.player, newTeam)
+                }
 
                 event.tile.setNet(Blocks.coreShard, newTeam, 0)
 
@@ -266,8 +315,12 @@ class PlagueHandler : Handler {
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) {
         runOnMindustryThread {
-            if (event.player.team() == Team.blue) {
-                spawnPlayerUnit(event.player, Team.blue)
+            runBlocking {
+                if (event.player.team() == Team.blue) {
+                    spawnPlayerUnit(event.player, Team.blue)
+
+                    updatePlayerSpecificRules(event.player)
+                }
             }
         }
     }
@@ -305,9 +358,15 @@ class PlagueHandler : Handler {
 
             Call.setRules(Vars.state.rules)
 
+            runBlocking {
+                updateAllPlayerSpecificRules()
+            }
+
             // Move every no team player to plague team
             Groups.player.filter { it.team() === Team.blue }.forEach {
-                it.team(Team.malis)
+                runBlocking {
+                    changePlayerTeam(it, Team.malis)
+                }
             }
         }
     }
@@ -317,12 +376,24 @@ class PlagueHandler : Handler {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.PlayingSecondPhase
         }
+
+        runOnMindustryThread {
+            runBlocking {
+                updateAllPlayerSpecificRules()
+            }
+        }
     }
 
     // 15 minutes after onSecondPhase move to ended.
     suspend fun onEnded() {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.Ended
+        }
+
+        runOnMindustryThread {
+            runBlocking {
+                updateAllPlayerSpecificRules()
+            }
         }
     }
 }

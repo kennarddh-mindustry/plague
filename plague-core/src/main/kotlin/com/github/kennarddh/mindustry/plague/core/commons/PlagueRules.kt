@@ -6,7 +6,7 @@ import mindustry.game.Rules
 import mindustry.game.Team
 
 object PlagueRules {
-    fun initRules(baseRules: Rules?): Rules {
+    fun initRules(baseRules: Rules? = null): Rules {
         val rules = if (baseRules == null) Rules() else baseRules.copy()
 
         rules.canGameOver = false
