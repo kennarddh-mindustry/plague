@@ -15,7 +15,6 @@ import com.github.kennarddh.mindustry.plague.core.commons.PlagueBanned
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueRules
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueState
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueVars
-import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
@@ -124,8 +123,6 @@ class PlagueHandler : Handler {
 
             for (core in activeTeam.cores) {
                 val distance = Mathf.dst(x, y, core.x, core.y)
-
-                Logger.info("$x $y Core ${core.x} ${core.y} $distance > $maxDistance")
 
                 if (distance > maxDistance) continue
 
