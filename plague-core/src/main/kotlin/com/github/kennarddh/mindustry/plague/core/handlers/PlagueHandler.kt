@@ -83,7 +83,7 @@ class PlagueHandler : Handler {
     fun getNewEmptyTeam(): Team? {
         return Team.all.find {
             // Non default team and not active.
-            it.id > 5 && !it.active()
+            it.id > 6 && !it.active()
         }
     }
 
