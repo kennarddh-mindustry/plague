@@ -176,19 +176,26 @@ class PlagueHandler : Handler {
     }
 
     @Command(["teamleave"])
-    fun teamLeave(sender: PlayerCommandSender) {
+    suspend fun teamLeave(sender: PlayerCommandSender) {
+        PlagueVars.stateLock.withLock {
+            if (PlagueVars.state == PlagueState.Prepare) {
+                runOnMindustryThread {
+                    sender.player.team(Team.blue)
+                }
+
+                return
+            }
+        }
+
         if (sender.player.team() == Team.malis)
             return sender.sendError("You cannot leave plague team.")
-
-        if (sender.player.team() == Team.blue)
-            return sender.sendError("You are not in any survivor team.")
 
         leaveSurvivorTeam(sender.player)
 
         runOnMindustryThread {
             runBlocking {
                 changePlayerTeam(sender.player, Team.malis)
-                
+
                 sender.player.unit().kill()
 
                 sender.sendSuccess("You are now in plague team.")
