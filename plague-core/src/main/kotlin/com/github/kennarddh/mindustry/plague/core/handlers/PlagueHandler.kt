@@ -182,13 +182,13 @@ class PlagueHandler : Handler {
 
                 event.builder.player.team(newTeam)
 
-                Vars.state.rules.loadout.forEach {
-                    newTeam.core().items().add(it.item, it.amount.coerceAtMost(newTeam.core().storageCapacity))
-                }
-
                 event.tile.setNet(Blocks.coreShard, newTeam, 0)
 
                 Vars.state.teams.registerCore(event.tile.build as CoreBuild)
+
+                Vars.state.rules.loadout.forEach {
+                    newTeam.core().items().add(it.item, it.amount.coerceAtMost(newTeam.core().storageCapacity))
+                }
             }
         }
     }
