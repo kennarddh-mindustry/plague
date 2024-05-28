@@ -48,22 +48,20 @@ class PlagueHandler : Handler {
 
     @Filter(FilterType.Action, Priority.High)
     suspend fun buildBlockActionFilter(action: Administration.PlayerAction): Boolean {
-        if (action.unit == null) return true
+        if (action.player == null) return true
 
-        if (action.unit.team() == Team.blue) return true
+        if (action.player.team() == Team.blue) return true
+
+        if (action.block == null) return true
 
         PlagueVars.stateLock.withLock {
-            if (action.unit.team() == Team.malis) {
-                if (action.block != null) {
-                    if (PlagueBanned.getCurrentPlagueBannedBlocks(true).contains(action.block)) {
-                        return false
-                    }
+            if (action.player.team() == Team.malis) {
+                if (PlagueBanned.getCurrentPlagueBannedBlocks(true).contains(action.block)) {
+                    return false
                 }
             } else {
-                if (action.block != null) {
-                    if (PlagueBanned.getCurrentSurvivorsBannedBlocks().contains(action.block)) {
-                        return false
-                    }
+                if (PlagueBanned.getCurrentSurvivorsBannedBlocks().contains(action.block)) {
+                    return false
                 }
             }
         }

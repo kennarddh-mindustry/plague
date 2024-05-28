@@ -224,7 +224,7 @@ object PlagueBanned {
 
                 PlagueState.PlayingFirstPhase,
                 PlagueState.PlayingSecondPhase,
-                PlagueState.Ended -> plagueBannedBlocks - serpuloUnitConstructorBlocks
+                PlagueState.Ended -> plagueBannedBlocks - unitConstructorBlocks
             }
         }
 
