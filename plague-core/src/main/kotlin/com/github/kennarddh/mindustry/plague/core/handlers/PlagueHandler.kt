@@ -229,6 +229,8 @@ class PlagueHandler : Handler {
 
             if (closestEnemyCoreInRange != null) {
                 // Join closest survivor core team
+                survivorTeamsData[closestEnemyCoreInRange.team]?.playersUUID?.add(event.builder.player.uuid())
+                
                 runBlocking {
                     changePlayerTeam(event.builder.player, closestEnemyCoreInRange.team)
                 }
@@ -241,7 +243,10 @@ class PlagueHandler : Handler {
                 val newTeam = getNewEmptyTeam()
                     ?: return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]No available team.")
 
-                survivorTeamsData[newTeam] = SurvivorTeamData(event.builder.player.uuid(), event.builder.player.uuid())
+                survivorTeamsData[newTeam] = SurvivorTeamData(
+                    event.builder.player.uuid(), event.builder.player.uuid(),
+                    mutableListOf(event.builder.player.uuid())
+                )
 
                 runBlocking {
                     changePlayerTeam(event.builder.player, newTeam)
