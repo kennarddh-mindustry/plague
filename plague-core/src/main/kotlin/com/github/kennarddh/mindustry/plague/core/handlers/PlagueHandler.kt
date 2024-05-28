@@ -159,6 +159,25 @@ class PlagueHandler : Handler {
         }
     }
 
+    @Command(["teamleave"])
+    fun teamLeave(sender: PlayerCommandSender) {
+        if (sender.player.team() == Team.malis)
+            return sender.sendError("You cannot leave plague team.")
+
+        if (sender.player.team() == Team.blue)
+            return sender.sendError("You are not in any survivor team.")
+
+        leaveSurvivorTeam(sender.player)
+
+        runOnMindustryThread {
+            runBlocking {
+                changePlayerTeam(sender.player, Team.malis)
+
+                sender.sendSuccess("You are now in plague team.")
+            }
+        }
+    }
+
     fun getNewEmptySurvivorTeam(): Team? {
         return Team.all.find {
             // Non default team and not active.
