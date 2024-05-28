@@ -168,6 +168,8 @@ class PlagueHandler : Handler {
             runBlocking {
                 changePlayerTeam(sender.player, Team.malis)
 
+                sender.player.unit().kill()
+
                 sender.sendSuccess("You are now in plague team.")
             }
         }
@@ -186,6 +188,8 @@ class PlagueHandler : Handler {
         runOnMindustryThread {
             runBlocking {
                 changePlayerTeam(sender.player, Team.malis)
+                
+                sender.player.unit().kill()
 
                 sender.sendSuccess("You are now in plague team.")
             }
