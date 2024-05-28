@@ -3,6 +3,7 @@ package com.github.kennarddh.mindustry.plague.core.handlers
 import arc.math.Mathf
 import arc.util.Timer
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Command
+import com.github.kennarddh.mindustry.genesis.core.commands.annotations.parameters.Vararg
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.CommandSender
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.PlayerCommandSender
 import com.github.kennarddh.mindustry.genesis.core.commons.CoroutineScopes
@@ -132,28 +133,26 @@ class PlagueHandler : Handler {
     fun leaveSurvivorTeam(player: Player) {
         survivorTeamsData[player.team()]?.playersUUID?.remove(player.uuid())
 
-        runOnMindustryThread {
-            val teamData = Vars.state.teams[player.team()]
+        val teamData = Vars.state.teams[player.team()]
 
-            // Minus 1 because the player is still in the team
-            if (teamData.players.size - 1 == 0) {
-                Call.sendMessage("[accent]All ${player.team().name} team players left. Team will be removed.")
+        // Minus 1 because the player is still in the team
+        if (teamData.players.size - 1 == 0) {
+            Call.sendMessage("[accent]All ${player.team().name} team players left. Team will be removed.")
 
-                teamData.units.forEach { it.kill() }
-                teamData.buildings.forEach { it.kill() }
+            teamData.units.forEach { it.kill() }
+            teamData.buildings.forEach { it.kill() }
 
-                survivorTeamsData.remove(player.team())
+            survivorTeamsData.remove(player.team())
 
-                return@runOnMindustryThread
-            }
+            return
+        }
 
-            if (survivorTeamsData[player.team()]?.ownerUUID == player.uuid()) {
-                val newCurrentOwner = teamData.players.toList().filter { it.uuid() != player.uuid() }[0]
+        if (survivorTeamsData[player.team()]?.ownerUUID == player.uuid()) {
+            val newCurrentOwner = teamData.players.toList().filter { it.uuid() != player.uuid() }[0]
 
-                survivorTeamsData[player.team()]?.ownerUUID = newCurrentOwner.uuid()
+            survivorTeamsData[player.team()]?.ownerUUID = newCurrentOwner.uuid()
 
-                newCurrentOwner.sendMessage("[green]You are now the owner of this team because the previous owner left.")
-            }
+            newCurrentOwner.sendMessage("[green]You are now the owner of this team because the previous owner left.")
         }
     }
 
@@ -162,10 +161,10 @@ class PlagueHandler : Handler {
         if (sender.player.team() == Team.malis)
             return sender.sendError("You are already in plague team.")
 
-        leaveSurvivorTeam(sender.player)
-
         runOnMindustryThread {
             runBlocking {
+                leaveSurvivorTeam(sender.player)
+
                 changePlayerTeam(sender.player, Team.malis)
 
                 sender.player.unit().kill()
@@ -177,10 +176,18 @@ class PlagueHandler : Handler {
 
     @Command(["teamleave"])
     suspend fun teamLeave(sender: PlayerCommandSender) {
+        if (sender.player.team() == Team.blue)
+            return sender.sendError("You are not in any team.")
+
         PlagueVars.stateLock.withLock {
             if (PlagueVars.state == PlagueState.Prepare) {
                 runOnMindustryThread {
-                    sender.player.team(Team.blue)
+                    runBlocking {
+                        if (sender.player.team() != Team.malis)
+                            leaveSurvivorTeam(sender.player)
+
+                        changePlayerTeam(sender.player, Team.blue)
+                    }
                 }
 
                 return
@@ -190,15 +197,64 @@ class PlagueHandler : Handler {
         if (sender.player.team() == Team.malis)
             return sender.sendError("You cannot leave plague team.")
 
-        leaveSurvivorTeam(sender.player)
-
         runOnMindustryThread {
             runBlocking {
+                leaveSurvivorTeam(sender.player)
+
                 changePlayerTeam(sender.player, Team.malis)
 
                 sender.player.unit().kill()
 
                 sender.sendSuccess("You are now in plague team.")
+            }
+        }
+    }
+
+    @Command(["teamkick"])
+    suspend fun teamKick(sender: PlayerCommandSender, @Vararg target: Player) {
+        if (sender.player.team() == Team.malis)
+            return sender.sendError("You cannot kick in plague team.")
+
+        if (sender.player.team() == Team.blue)
+            return sender.sendError("You are not in any team.")
+
+        if (sender.player.team() != target.team())
+            return sender.sendError("Cannot kick other team's member.")
+
+        if (sender.player == target)
+            return sender.sendError("Cannot kick yourself.")
+
+        val survivorTeamData = survivorTeamsData[sender.player.team()]
+
+        if (survivorTeamData?.ownerUUID != sender.player.uuid())
+            return sender.sendError("You are not owner in the team.")
+
+        Groups.player.filter { survivorTeamsData[sender.player.team()]?.playersUUID?.contains(it.uuid()) ?: false }
+            .forEach {
+                it.sendMessage("[scarlet]${target.plainName()} was kicked from the team.")
+            }
+
+        PlagueVars.stateLock.withLock {
+            if (PlagueVars.state == PlagueState.Prepare) {
+                runOnMindustryThread {
+                    runBlocking {
+                        leaveSurvivorTeam(target)
+
+                        changePlayerTeam(target, Team.blue)
+                    }
+                }
+
+                return
+            }
+        }
+
+        runOnMindustryThread {
+            runBlocking {
+                leaveSurvivorTeam(target)
+
+                changePlayerTeam(target, Team.malis)
+
+                target.unit().kill()
             }
         }
     }
