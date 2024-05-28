@@ -1,3 +1,3 @@
 package com.github.kennarddh.mindustry.plague.core.commons
 
-data class SurvivorTeamData(val ownerUUID: String, var currentOwnerUUID: String?, val playersUUID: MutableList<String>)
+data class SurvivorTeamData(var ownerUUID: String, val playersUUID: MutableSet<String>)

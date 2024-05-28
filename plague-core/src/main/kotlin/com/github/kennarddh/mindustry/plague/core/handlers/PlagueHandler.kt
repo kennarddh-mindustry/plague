@@ -129,8 +129,27 @@ class PlagueHandler : Handler {
         updatePlayerSpecificRules(player)
     }
 
+    fun leaveSurvivorTeam(player: Player) {
+        survivorTeamsData[player.team()]?.playersUUID?.remove(player.uuid())
+
+        if (survivorTeamsData[player.team()]?.ownerUUID == player.uuid()) {
+            val teamData = Vars.state.teams[player.team()]
+
+            val newCurrentOwner = teamData.players[0]
+
+            survivorTeamsData[player.team()]?.ownerUUID = newCurrentOwner.uuid()
+
+            newCurrentOwner.sendMessage("[green]You are now the owner of this team because the previous owner left.")
+        }
+    }
+
     @Command(["plague"])
     fun plague(sender: PlayerCommandSender) {
+        if (sender.player.team() == Team.malis)
+            return sender.sendError("You are already in plague team.")
+
+        leaveSurvivorTeam(sender.player)
+
         runOnMindustryThread {
             runBlocking {
                 changePlayerTeam(sender.player, Team.malis)
@@ -140,7 +159,7 @@ class PlagueHandler : Handler {
         }
     }
 
-    fun getNewEmptyTeam(): Team? {
+    fun getNewEmptySurvivorTeam(): Team? {
         return Team.all.find {
             // Non default team and not active.
             it.id > 6 && !it.active()
@@ -240,12 +259,11 @@ class PlagueHandler : Handler {
                 Vars.state.teams.registerCore(event.tile.build as CoreBuild)
             } else {
                 // Create new team
-                val newTeam = getNewEmptyTeam()
+                val newTeam = getNewEmptySurvivorTeam()
                     ?: return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]No available team.")
 
                 survivorTeamsData[newTeam] = SurvivorTeamData(
-                    event.builder.player.uuid(), event.builder.player.uuid(),
-                    mutableListOf(event.builder.player.uuid())
+                    event.builder.player.uuid(), mutableSetOf(event.builder.player.uuid())
                 )
 
                 runBlocking {
@@ -305,24 +323,20 @@ class PlagueHandler : Handler {
 
     @EventHandler
     fun onPlayerLeave(event: EventType.PlayerLeave) {
-        val teamOwned = survivorTeamsData.entries.find { it.value.currentOwnerUUID == event.player.uuid() }
+        val teamOwned = survivorTeamsData.entries.find { it.value.ownerUUID == event.player.uuid() }
 
         if (teamOwned == null) return
 
         runOnMindustryThread {
             val teamData = Vars.state.teams[teamOwned.key]
 
-            if (teamData.players.size == 0) {
-                survivorTeamsData[teamOwned.key]?.currentOwnerUUID = null
-
+            if (teamData.players.size == 0)
                 return@runOnMindustryThread
-            }
 
-            val newCurrentOwner = teamData.players[0]
-
-            survivorTeamsData[teamOwned.key]?.currentOwnerUUID = newCurrentOwner.uuid()
-
-            newCurrentOwner.sendMessage("[green]You are now the owner of this team because the previous owner left.")
+            Groups.player.filter { survivorTeamsData[teamOwned.key]?.playersUUID?.contains(it.uuid()) ?: false }
+                .forEach {
+                    it.sendMessage("[accent]Team owner left.")
+                }
         }
     }
 
