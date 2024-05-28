@@ -46,8 +46,16 @@ class PlagueHandler : Handler {
     private val survivorTeamsData: MutableMap<Team, SurvivorTeamData> = ConcurrentHashMap()
 
     @Filter(FilterType.Action, Priority.High)
+    fun payloadActionFilter(action: Administration.PlayerAction): Boolean {
+        if (action.type == Administration.ActionType.dropPayload) return false
+        if (action.type == Administration.ActionType.pickupBlock) return false
+
+        return true
+    }
+
+    @Filter(FilterType.Action, Priority.High)
     fun powerSourceActionFilter(action: Administration.PlayerAction): Boolean {
-        if (!(action.type == Administration.ActionType.breakBlock || action.type == Administration.ActionType.pickupBlock)) return true
+        if (action.type != Administration.ActionType.breakBlock) return true
 
         if (action.block != Blocks.powerSource) return true
 
