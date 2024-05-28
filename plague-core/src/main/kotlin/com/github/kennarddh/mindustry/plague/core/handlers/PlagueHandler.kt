@@ -22,14 +22,17 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
 import mindustry.Vars
 import mindustry.content.Blocks
+import mindustry.content.Items
 import mindustry.content.UnitTypes
 import mindustry.core.NetServer
 import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
+import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.net.Administration
+import mindustry.type.ItemStack
 import mindustry.world.Block
 import mindustry.world.Tile
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
@@ -37,6 +40,8 @@ import kotlin.time.Duration.Companion.minutes
 
 
 class PlagueHandler : Handler {
+    val monoReward = listOf(ItemStack(Items.copper, 300), ItemStack(Items.lead, 300))
+
     private val timers = mutableSetOf<Timer.Task>()
 
     @Filter(FilterType.Action, Priority.High)
@@ -398,6 +403,28 @@ class PlagueHandler : Handler {
             runBlocking {
                 updateAllPlayerSpecificRules()
             }
+        }
+    }
+
+    @EventHandler
+    fun onMonoUnitCreate(event: EventType.UnitCreateEvent) {
+        if (event.unit.type != UnitTypes.mono) return
+
+        if (event.unit.team.core() == null) return
+
+        runOnMindustryThread {
+            Call.label(
+                "${Iconc.unitMono} created",
+                5f,
+                event.spawner.x,
+                event.spawner.y
+            )
+
+            // .kill() instantly kill the unit makes it weird because the unit just disappear
+            event.unit.health = 0f
+            event.unit.dead = true
+
+            event.unit.team.core().items().add(monoReward)
         }
     }
 }
