@@ -77,6 +77,9 @@ object PlagueBanned {
                 Blocks.thoriumReactor,
                 Blocks.impactReactor,
 
+                Blocks.battery,
+                Blocks.batteryLarge,
+
                 // Erekir power generators
                 Blocks.turbineCondenser,
                 Blocks.chemicalCombustionChamber,
