@@ -4,6 +4,7 @@ import arc.math.Mathf
 import arc.util.Timer
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Command
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.CommandSender
+import com.github.kennarddh.mindustry.genesis.core.commands.senders.PlayerCommandSender
 import com.github.kennarddh.mindustry.genesis.core.commons.CoroutineScopes
 import com.github.kennarddh.mindustry.genesis.core.commons.priority.Priority
 import com.github.kennarddh.mindustry.genesis.core.commons.runOnMindustryThread
@@ -76,6 +77,15 @@ class PlagueHandler : Handler {
         if (action.player.team() == Team.blue) return false
 
         return true
+    }
+
+    @Command(["plague"])
+    fun plague(sender: PlayerCommandSender) {
+        runOnMindustryThread {
+            sender.player.team(Team.malis)
+
+            sender.sendSuccess("You are now in plague team.")
+        }
     }
 
     fun getNewEmptyTeam(): Team? {
