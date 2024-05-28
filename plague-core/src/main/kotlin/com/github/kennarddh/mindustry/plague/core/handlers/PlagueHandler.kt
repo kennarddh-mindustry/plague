@@ -141,7 +141,7 @@ class PlagueHandler : Handler {
     }
 
     @EventHandler
-    suspend fun onBuildSelect(event: EventType.BuildSelectEvent) {
+    suspend fun createSurvivorCoreEventHandler(event: EventType.BuildSelectEvent) {
         PlagueVars.stateLock.withLock {
             if (PlagueVars.state != PlagueState.Prepare) return
         }
@@ -182,6 +182,10 @@ class PlagueHandler : Handler {
 
                 event.builder.player.team(newTeam)
 
+                Vars.state.rules.loadout.forEach {
+                    newTeam.core().items().add(it.item, it.amount.coerceAtMost(newTeam.core().storageCapacity))
+                }
+
                 event.tile.setNet(Blocks.coreShard, newTeam, 0)
 
                 Vars.state.teams.registerCore(event.tile.build as CoreBuild)
@@ -200,6 +204,8 @@ class PlagueHandler : Handler {
             Vars.state.rules = PlagueRules.baseRules
 
             Call.setRules(Vars.state.rules)
+
+            Team.malis.core().items().clear()
         }
 
         Timer.schedule({
