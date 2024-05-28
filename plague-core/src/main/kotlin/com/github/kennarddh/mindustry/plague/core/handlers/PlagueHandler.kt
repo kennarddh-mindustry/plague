@@ -34,6 +34,7 @@ import mindustry.type.ItemStack
 import mindustry.world.Block
 import mindustry.world.Tile
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.minutes
 
@@ -44,6 +45,8 @@ class PlagueHandler : Handler {
     private val timers = mutableSetOf<Timer.Task>()
 
     private val survivorTeamsData: MutableMap<Team, SurvivorTeamData> = ConcurrentHashMap()
+
+    private val teamsPlayersUUIDBlacklist: MutableMap<Team, MutableSet<String>> = ConcurrentHashMap()
 
     @Filter(FilterType.Action, Priority.High)
     fun payloadActionFilter(action: Administration.PlayerAction): Boolean {
@@ -145,6 +148,8 @@ class PlagueHandler : Handler {
 
         // Minus 1 because the player is still in the team
         if (teamData.players.size - 1 == 0) {
+            teamsPlayersUUIDBlacklist.remove(player.team())
+
             Call.sendMessage("[accent]All ${player.team().name} team players left. Team will be removed.")
 
             teamData.units.forEach { it.kill() }
@@ -241,6 +246,8 @@ class PlagueHandler : Handler {
             .forEach {
                 it.sendMessage("[scarlet]${target.plainName()} was kicked from the team.")
             }
+
+        teamsPlayersUUIDBlacklist[sender.player.team()]?.add(target.uuid())
 
         PlagueVars.stateLock.withLock {
             if (PlagueVars.state == PlagueState.Prepare) {
@@ -356,6 +363,9 @@ class PlagueHandler : Handler {
 
             if (closestEnemyCoreInRange != null) {
                 // Join closest survivor core team
+                if (teamsPlayersUUIDBlacklist[closestEnemyCoreInRange.team]?.contains(event.builder.player.uuid()) == true)
+                    return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]You are blacklisted from joining the team '${closestEnemyCoreInRange.team.name}' because you were kicked by the team owner.")
+
                 survivorTeamsData[closestEnemyCoreInRange.team]?.playersUUID?.add(event.builder.player.uuid())
 
                 runBlocking {
@@ -373,6 +383,8 @@ class PlagueHandler : Handler {
                 survivorTeamsData[newTeam] = SurvivorTeamData(
                     event.builder.player.uuid(), mutableSetOf(event.builder.player.uuid())
                 )
+
+                teamsPlayersUUIDBlacklist[newTeam] = Collections.synchronizedSet(mutableSetOf())
 
                 runBlocking {
                     changePlayerTeam(event.builder.player, newTeam)
@@ -451,6 +463,7 @@ class PlagueHandler : Handler {
     @EventHandler
     fun onGameOver(event: EventType.GameOverEvent) {
         survivorTeamsData.clear()
+        teamsPlayersUUIDBlacklist.clear()
 
         timers.forEach {
             it.cancel()
