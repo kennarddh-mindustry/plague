@@ -154,13 +154,15 @@ class PlagueHandler : Handler {
                 val checkTile = Vars.world.tile(wx, wy)
 
                 if (
-                // Empty tile
-                    checkTile == null
+                // Void tile
+                    checkTile == null ||
+                    // Tile with block
+                    checkTile.build != null ||
                     // Deep water
-                    || checkTile.floor().isDeep
+                    checkTile.floor().isDeep ||
                     // Exactly same block
-                    || (block == checkTile.block() && checkTile.build != null && block.rotate)
-                    || !checkTile.floor().placeableOn
+                    (block == checkTile.block() && checkTile.build != null && block.rotate) ||
+                    !checkTile.floor().placeableOn
                 )
                     return false
             }
@@ -206,7 +208,7 @@ class PlagueHandler : Handler {
             event.tile.removeNet()
 
             if (!validPlace(Blocks.coreShard, event.tile))
-                return@runOnMindustryThread
+                return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Invalid core position.")
 
             for (core in Team.malis.cores()) {
                 if (core.dst(event.tile) < 100 * Vars.tilesize)
