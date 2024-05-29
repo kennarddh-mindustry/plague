@@ -604,8 +604,8 @@ class PlagueHandler : Handler {
     }
 
     @Command(["spawnunit"])
-    fun spawnUnit(sender: PlayerCommandSender, unitType: UnitType) {
-        unitType.spawn(sender.player, sender.player.team())
+    fun spawnUnit(sender: PlayerCommandSender, unitType: UnitType, team: Team = sender.player.team()) {
+        unitType.spawn(sender.player, team)
 
         sender.sendSuccess(
             "Spawned '${unitType.name}' at (${floor(sender.player.x / Vars.tilesize).toInt()}, ${
