@@ -166,14 +166,16 @@ class PlagueHandler : Handler {
 
         // Minus 1 because the player is still in the team
         if (teamData.players.size - 1 == 0) {
-            teamsPlayersUUIDBlacklist.remove(player.team())
+            if (player.team() != Team.blue) {
+                teamsPlayersUUIDBlacklist.remove(player.team())
 
-            Call.sendMessage("[accent]All ${player.team().name} team players left. Team will be removed.")
+                Call.sendMessage("[accent]All ${player.team().name} team players left. Team will be removed.")
 
-            teamData.units.forEach { it.kill() }
-            teamData.buildings.forEach { it.kill() }
+                teamData.units.forEach { it.kill() }
+                teamData.buildings.forEach { it.kill() }
 
-            survivorTeamsData.remove(player.team())
+                survivorTeamsData.remove(player.team())
+            }
 
             return
         }
@@ -406,7 +408,7 @@ class PlagueHandler : Handler {
 
         return closest
     }
-    
+
     @EventHandler
     suspend fun createSurvivorCoreEventHandler(event: EventType.BuildSelectEvent) {
         PlagueVars.stateLock.withLock {
