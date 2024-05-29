@@ -238,11 +238,12 @@ class PlagueHandler : Handler {
             return sender.sendError("Cannot kick yourself.")
 
         val survivorTeamData = survivorTeamsData[sender.player.team()]
+            ?: return sender.sendError("Error occurred. SurvivorTeamData == null.")
 
-        if (survivorTeamData?.ownerUUID != sender.player.uuid())
+        if (survivorTeamData.ownerUUID != sender.player.uuid())
             return sender.sendError("You are not owner in the team.")
 
-        Groups.player.filter { survivorTeamsData[sender.player.team()]?.playersUUID?.contains(it.uuid()) ?: false }
+        Groups.player.filter { survivorTeamData.playersUUID.contains(it.uuid()) }
             .forEach {
                 it.sendMessage("[scarlet]${target.plainName()} was kicked from the team.")
             }
@@ -291,7 +292,7 @@ class PlagueHandler : Handler {
 
         survivorTeamData.locked != survivorTeamData.locked
 
-        Groups.player.filter { survivorTeamsData[sender.player.team()]?.playersUUID?.contains(it.uuid()) ?: false }
+        Groups.player.filter { survivorTeamData.playersUUID.contains(it.uuid()) }
             .forEach {
                 if (survivorTeamData.locked)
                     it.sendMessage("[scarlet]This team is now locked by the owner.")
@@ -392,10 +393,13 @@ class PlagueHandler : Handler {
                 if (teamsPlayersUUIDBlacklist[closestEnemyCoreInRange.team]?.contains(event.builder.player.uuid()) == true)
                     return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]You are blacklisted from joining the team '${closestEnemyCoreInRange.team.name}' because you were kicked by the team owner.")
 
-                if (survivorTeamsData[closestEnemyCoreInRange.team()]?.locked == true)
+                val survivorTeamData = survivorTeamsData[closestEnemyCoreInRange.team()]
+                    ?: return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Error occurred. SurvivorTeamData == null when joining a team.")
+
+                if (survivorTeamData.locked)
                     return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]The closest team '${closestEnemyCoreInRange.team.name}' is locked.")
 
-                survivorTeamsData[closestEnemyCoreInRange.team]?.playersUUID?.add(event.builder.player.uuid())
+                survivorTeamData.playersUUID.add(event.builder.player.uuid())
 
                 runBlocking {
                     changePlayerTeam(event.builder.player, closestEnemyCoreInRange.team)
