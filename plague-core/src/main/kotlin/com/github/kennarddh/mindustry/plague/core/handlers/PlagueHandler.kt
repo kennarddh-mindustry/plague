@@ -660,6 +660,8 @@ class PlagueHandler : Handler {
             Groups.player.filter { it.team() === Team.blue }.forEach {
                 runBlocking {
                     changePlayerTeam(it, Team.malis)
+
+                    it.unit().kill()
                 }
             }
         }
