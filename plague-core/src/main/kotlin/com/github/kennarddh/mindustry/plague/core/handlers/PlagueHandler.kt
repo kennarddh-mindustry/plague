@@ -331,10 +331,11 @@ class PlagueHandler : Handler {
             }
     }
 
+    fun isValidSurvivorTeam(team: Team) = team.id > 6
+
     fun getNewEmptySurvivorTeam(): Team? {
         return Team.all.find {
-            // Non default team and not active.
-            it.id > 6 && !it.active()
+            isValidSurvivorTeam(it) && !it.active()
         }
     }
 
@@ -625,6 +626,10 @@ class PlagueHandler : Handler {
 
         runOnMindustryThread {
             runBlocking {
+                Team.all.filter { isValidSurvivorTeam(it) }.forEach {
+                    it.rules().blockDamageMultiplier *= 1.3f
+                }
+
                 updateAllPlayerSpecificRules()
             }
         }
