@@ -1,6 +1,7 @@
 package com.github.kennarddh.mindustry.plague.core.commons
 
 import arc.struct.Seq
+import mindustry.Vars
 import mindustry.content.UnitTypes
 import mindustry.game.Rules
 import mindustry.game.Team
@@ -24,6 +25,13 @@ object PlagueRules {
         rules.unitWhitelist = false
         rules.blockWhitelist = false
         rules.reactorExplosions = false
+        rules.unitCapVariable = false
+
+        if (Vars.state.map == null) {
+            rules.unitCap = 48
+        } else {
+            rules.unitCap = Vars.state.map.rules().unitCap.coerceAtMost(40)
+        }
 
         return rules
     }
