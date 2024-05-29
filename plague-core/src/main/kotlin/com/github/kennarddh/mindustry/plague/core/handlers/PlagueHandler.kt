@@ -274,6 +274,32 @@ class PlagueHandler : Handler {
         }
     }
 
+
+    @Command(["teamlock"])
+    fun teamLock(sender: PlayerCommandSender) {
+        if (sender.player.team() == Team.malis)
+            return sender.sendError("You cannot lock plague team.")
+
+        if (sender.player.team() == Team.blue)
+            return sender.sendError("You are not in any team.")
+
+        val survivorTeamData = survivorTeamsData[sender.player.team()]
+            ?: return sender.sendError("Error occurred. SurvivorTeamData == null.")
+
+        if (survivorTeamData.ownerUUID != sender.player.uuid())
+            return sender.sendError("You are not owner in the team.")
+
+        survivorTeamData.locked != survivorTeamData.locked
+
+        Groups.player.filter { survivorTeamsData[sender.player.team()]?.playersUUID?.contains(it.uuid()) ?: false }
+            .forEach {
+                if (survivorTeamData.locked)
+                    it.sendMessage("[scarlet]This team is now locked by the owner.")
+                else
+                    it.sendMessage("[green]This team is now unlocked by the owner.")
+            }
+    }
+
     fun getNewEmptySurvivorTeam(): Team? {
         return Team.all.find {
             // Non default team and not active.
@@ -365,6 +391,9 @@ class PlagueHandler : Handler {
                 // Join closest survivor core team
                 if (teamsPlayersUUIDBlacklist[closestEnemyCoreInRange.team]?.contains(event.builder.player.uuid()) == true)
                     return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]You are blacklisted from joining the team '${closestEnemyCoreInRange.team.name}' because you were kicked by the team owner.")
+
+                if (survivorTeamsData[closestEnemyCoreInRange.team()]?.locked == true)
+                    return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]The closest team '${closestEnemyCoreInRange.team.name}' is locked.")
 
                 survivorTeamsData[closestEnemyCoreInRange.team]?.playersUUID?.add(event.builder.player.uuid())
 
