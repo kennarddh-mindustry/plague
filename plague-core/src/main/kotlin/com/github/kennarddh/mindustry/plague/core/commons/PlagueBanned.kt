@@ -83,6 +83,7 @@ object PlagueBanned {
                 // Erekir power generators
                 Blocks.turbineCondenser,
                 Blocks.chemicalCombustionChamber,
+                Blocks.pyrolysisGenerator,
                 Blocks.fluxReactor,
                 Blocks.neoplasiaReactor
             )
