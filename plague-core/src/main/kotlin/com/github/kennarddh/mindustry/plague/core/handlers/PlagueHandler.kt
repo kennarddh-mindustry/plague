@@ -1,7 +1,10 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
 import arc.math.Mathf
+import arc.util.Time
+import com.github.kennarddh.mindustry.genesis.core.Genesis
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Command
+import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Description
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.parameters.Vararg
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.CommandSender
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.PlayerCommandSender
@@ -438,6 +441,27 @@ class PlagueHandler : Handler {
         }
     }
 
+    @Command(["sync"])
+    @Description("Re-synchronize world state.")
+    fun playerSyncCommand(sender: PlayerCommandSender) {
+        runOnMindustryThread {
+            if (sender.player.isLocal)
+                return@runOnMindustryThread sender.sendError("Re-synchronizing as the host is pointless.")
+
+            if (Time.timeSinceMillis(sender.player.info.lastSyncTime) < 1000 * 5)
+                return@runOnMindustryThread sender.sendError("You may only /sync every 5 seconds.")
+
+            sender.player.info.lastSyncTime = Time.millis()
+
+            Call.worldDataBegin(sender.player.con)
+
+            Vars.netServer.sendWorldData(sender.player)
+
+            runBlocking {
+                updatePlayerSpecificRules(sender.player)
+            }
+        }
+    }
 
     @EventHandler
     suspend fun createSurvivorCoreEventHandler(event: EventType.BuildSelectEvent) {
@@ -652,6 +676,8 @@ class PlagueHandler : Handler {
     }
 
     override suspend fun onInit() {
+        Genesis.commandRegistry.removeCommand("sync")
+
         runOnMindustryThread {
             Vars.netServer.assigner = NetServer.TeamAssigner { player, _ ->
                 val lastSurvivorTeamData =
