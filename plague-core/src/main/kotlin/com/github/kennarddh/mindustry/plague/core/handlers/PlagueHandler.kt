@@ -245,7 +245,7 @@ class PlagueHandler : Handler {
 
         Groups.player.filter { survivorTeamData.playersUUID.contains(it.uuid()) }
             .forEach {
-                it.sendMessage("[scarlet]${target.plainName()} was kicked from the team.")
+                it.sendMessage("[scarlet]'${target.plainName()}' was kicked from the team.")
             }
 
         teamsPlayersUUIDBlacklist[sender.player.team()]?.add(target.uuid())
@@ -299,7 +299,7 @@ class PlagueHandler : Handler {
 
         Groups.player.filter { survivorTeamData.playersUUID.contains(it.uuid()) }
             .forEach {
-                it.sendMessage("[green]${target.plainName()} is now the owner of this team because the previous owner transferred the ownership.")
+                it.sendMessage("[green]'${target.plainName()}' is now the owner of this team because the previous owner transferred the ownership.")
             }
     }
 
