@@ -487,6 +487,11 @@ class PlagueHandler : Handler {
         runOnMindustryThreadSuspended {
             if (Vars.state.gameOver) return@runOnMindustryThreadSuspended
 
+            // Make sure malis core cannot be destroyed
+            Team.malis.cores().forEach {
+                it.health = Float.MAX_VALUE
+            }
+
             CoroutineScopes.Main.launch {
                 val state = PlagueVars.stateLock.withLock { PlagueVars.state }
 
