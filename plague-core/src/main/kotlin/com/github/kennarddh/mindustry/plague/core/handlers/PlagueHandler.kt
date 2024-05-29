@@ -1,5 +1,6 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
+import arc.Events
 import arc.math.Mathf
 import arc.util.Time
 import com.github.kennarddh.mindustry.genesis.core.Genesis
@@ -162,6 +163,22 @@ class PlagueHandler : Handler {
         updatePlayerSpecificRules(player)
     }
 
+    suspend fun onSurvivorTeamDestroyed() {
+        PlagueVars.stateLock.withLock {
+            if (PlagueVars.state == PlagueState.Ended) return
+        }
+
+        val survivorTeams = Vars.state.teams.active.toList().filter { isValidSurvivorTeam(it.team) }
+
+        if (survivorTeams.isNotEmpty()) return
+
+        runOnMindustryThread {
+            Call.infoMessage("[green]Plague team won the game.")
+
+            Events.fire(EventType.GameOverEvent(Team.malis))
+        }
+    }
+
     fun leaveSurvivorTeam(player: Player) {
         survivorTeamsData[player.team()]?.playersUUID?.remove(player.uuid())
 
@@ -178,6 +195,10 @@ class PlagueHandler : Handler {
                 teamData.buildings.forEach { it.kill() }
 
                 survivorTeamsData.remove(player.team())
+
+                CoroutineScopes.Main.launch {
+                    onSurvivorTeamDestroyed()
+                }
             }
 
             return
@@ -413,7 +434,7 @@ class PlagueHandler : Handler {
     }
 
     @EventHandler
-    fun onCoreDestroyed(event: EventType.BlockDestroyEvent) {
+    suspend fun onCoreDestroyed(event: EventType.BlockDestroyEvent) {
         if (event.tile.build !is CoreBuild) return
 
         val coreBuild = event.tile.build as CoreBuild
@@ -439,6 +460,10 @@ class PlagueHandler : Handler {
             teamData.units.forEach { it.kill() }
             teamData.buildings.forEach { it.kill() }
         }
+
+        survivorTeamsData.remove(coreBuild.team)
+
+        onSurvivorTeamDestroyed()
     }
 
     @Command(["sync"])
