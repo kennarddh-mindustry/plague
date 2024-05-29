@@ -275,6 +275,33 @@ class PlagueHandler : Handler {
         }
     }
 
+    @Command(["teamtransferownership"])
+    suspend fun teamTransferOwnership(sender: PlayerCommandSender, @Vararg target: Player) {
+        if (sender.player.team() == Team.malis)
+            return sender.sendError("You cannot transfer ownership in plague team.")
+
+        if (sender.player.team() == Team.blue)
+            return sender.sendError("You are not in any team.")
+
+        if (sender.player.team() != target.team())
+            return sender.sendError("Cannot transfer ownership to other team's member.")
+
+        if (sender.player == target)
+            return sender.sendError("Cannot transfer ownership to yourself.")
+
+        val survivorTeamData = survivorTeamsData[sender.player.team()]
+            ?: return sender.sendError("Error occurred. SurvivorTeamData == null.")
+
+        if (survivorTeamData.ownerUUID != sender.player.uuid())
+            return sender.sendError("You are not owner in the team.")
+
+        survivorTeamData.ownerUUID = target.uuid()
+
+        Groups.player.filter { survivorTeamData.playersUUID.contains(it.uuid()) }
+            .forEach {
+                it.sendMessage("[green]${target.plainName()} is now the owner of this team because the previous owner transferred the ownership.")
+            }
+    }
 
     @Command(["teamlock"])
     fun teamLock(sender: PlayerCommandSender) {
