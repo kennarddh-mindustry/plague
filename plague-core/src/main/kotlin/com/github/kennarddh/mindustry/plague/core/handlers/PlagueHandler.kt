@@ -36,11 +36,13 @@ import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.net.Administration
 import mindustry.type.ItemStack
+import mindustry.type.UnitType
 import mindustry.world.Block
 import mindustry.world.Tile
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.floor
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -599,6 +601,17 @@ class PlagueHandler : Handler {
         totalMapSkipDuration += duration
 
         sender.sendSuccess("Skipped '${duration.toDisplayString()}'. Current map time is '${mapTime.toDisplayString()}'.")
+    }
+
+    @Command(["spawnunit"])
+    fun spawnUnit(sender: PlayerCommandSender, unitType: UnitType) {
+        unitType.spawn(sender.player, sender.player.team())
+
+        sender.sendSuccess(
+            "Spawned '${unitType.name}' at (${floor(sender.player.x / Vars.tilesize).toInt()}, ${
+                floor(sender.player.y / Vars.tilesize).toInt()
+            })"
+        )
     }
 
     override suspend fun onInit() {
