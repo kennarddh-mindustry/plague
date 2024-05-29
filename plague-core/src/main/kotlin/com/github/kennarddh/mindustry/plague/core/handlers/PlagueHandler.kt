@@ -1,7 +1,6 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
 import arc.math.Mathf
-import arc.util.Timer
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Command
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.parameters.Vararg
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.CommandSender
@@ -9,21 +8,27 @@ import com.github.kennarddh.mindustry.genesis.core.commands.senders.PlayerComman
 import com.github.kennarddh.mindustry.genesis.core.commons.CoroutineScopes
 import com.github.kennarddh.mindustry.genesis.core.commons.priority.Priority
 import com.github.kennarddh.mindustry.genesis.core.commons.runOnMindustryThread
+import com.github.kennarddh.mindustry.genesis.core.commons.runOnMindustryThreadSuspended
 import com.github.kennarddh.mindustry.genesis.core.events.annotations.EventHandler
+import com.github.kennarddh.mindustry.genesis.core.events.annotations.EventHandlerTrigger
 import com.github.kennarddh.mindustry.genesis.core.filters.FilterType
 import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.genesis.standard.extensions.setRules
 import com.github.kennarddh.mindustry.plague.core.commons.*
+import com.github.kennarddh.mindustry.plague.core.commons.extensions.toDisplayString
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.content.UnitTypes
 import mindustry.core.NetServer
 import mindustry.game.EventType
+import mindustry.game.EventType.Trigger
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
@@ -36,17 +41,28 @@ import mindustry.world.Tile
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 
 class PlagueHandler : Handler {
-    val monoReward = listOf(ItemStack(Items.copper, 300), ItemStack(Items.lead, 300))
-
-    private val timers = mutableSetOf<Timer.Task>()
+    private val monoReward = listOf(ItemStack(Items.copper, 300), ItemStack(Items.lead, 300))
 
     private val survivorTeamsData: MutableMap<Team, SurvivorTeamData> = ConcurrentHashMap()
 
     private val teamsPlayersUUIDBlacklist: MutableMap<Team, MutableSet<String>> = ConcurrentHashMap()
+
+    private lateinit var mapStartTime: Instant
+    private var totalMapSkipDuration: Duration = 0.seconds
+
+    private val mapTime: Duration
+        get() {
+            if (::mapStartTime.isInitialized)
+                return Clock.System.now() - mapStartTime + totalMapSkipDuration
+
+            return totalMapSkipDuration
+        }
 
     @Filter(FilterType.Action, Priority.High)
     fun payloadActionFilter(action: Administration.PlayerAction): Boolean {
@@ -466,10 +482,33 @@ class PlagueHandler : Handler {
     }
 
     @EventHandler
+    @EventHandlerTrigger(Trigger.update)
+    suspend fun onUpdate() {
+        runOnMindustryThreadSuspended {
+            if (Vars.state.gameOver) return@runOnMindustryThreadSuspended
+
+            CoroutineScopes.Main.launch {
+                val state = PlagueVars.stateLock.withLock { PlagueVars.state }
+
+                if (state == PlagueState.Prepare && mapTime >= 2.minutes) {
+                    onFirstPhase()
+                } else if (state == PlagueState.PlayingFirstPhase && mapTime >= 47.minutes) {
+                    onSecondPhase()
+                } else if (state == PlagueState.PlayingSecondPhase && mapTime >= 62.minutes) {
+                    onEnded()
+                }
+            }
+        }
+    }
+
+    @EventHandler
     suspend fun onPlay(event: EventType.PlayEvent) {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.Prepare
         }
+
+        totalMapSkipDuration = 0.seconds
+        mapStartTime = Clock.System.now()
 
         runOnMindustryThread {
             // Reset rules
@@ -478,30 +517,6 @@ class PlagueHandler : Handler {
             Call.setRules(Vars.state.rules)
 
             Team.malis.core().items().clear()
-        }
-
-        Timer.schedule({
-            CoroutineScopes.Main.launch {
-                onFirstPhase()
-
-                Timer.schedule({
-                    CoroutineScopes.Main.launch {
-                        onSecondPhase()
-                    }
-
-                    Timer.schedule({
-                        CoroutineScopes.Main.launch {
-                            onEnded()
-                        }
-                    }, 15.minutes.inWholeSeconds.toFloat()).run {
-                        timers.add(this)
-                    }
-                }, 45.minutes.inWholeSeconds.toFloat()).run {
-                    timers.add(this)
-                }
-            }
-        }, 2.minutes.inWholeSeconds.toFloat()).run {
-            timers.add(this)
         }
     }
 
@@ -528,12 +543,6 @@ class PlagueHandler : Handler {
     fun onGameOver(event: EventType.GameOverEvent) {
         survivorTeamsData.clear()
         teamsPlayersUUIDBlacklist.clear()
-
-        timers.forEach {
-            it.cancel()
-        }
-
-        timers.clear()
     }
 
     fun spawnPlayerUnit(
@@ -570,8 +579,21 @@ class PlagueHandler : Handler {
     @Command(["state"])
     suspend fun getState(sender: CommandSender) {
         PlagueVars.stateLock.withLock {
-            sender.sendSuccess(PlagueVars.state.name)
+            sender.sendSuccess(
+                """
+                State: ${PlagueVars.state.name}
+                Map Time: ${mapTime.toDisplayString()}
+                Map Skip Duration: ${totalMapSkipDuration.toDisplayString()}
+                """.trimIndent()
+            )
         }
+    }
+
+    @Command(["skiptime"])
+    fun skipTime(sender: CommandSender, duration: Duration) {
+        totalMapSkipDuration += duration
+
+        sender.sendSuccess("Skipped '${duration.toDisplayString()}'. Current map time is '${mapTime.toDisplayString()}'.")
     }
 
     override suspend fun onInit() {
