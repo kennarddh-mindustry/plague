@@ -228,14 +228,12 @@ class PlagueHandler : Handler {
             }
         }
 
-        if (sender.player.team() == Team.malis)
-            return sender.sendError("You cannot leave plague team.")
-
         runOnMindustryThread {
             runBlocking {
-                leaveSurvivorTeam(sender.player)
+                if (isValidSurvivorTeam(sender.player.team()))
+                    leaveSurvivorTeam(sender.player)
 
-                changePlayerTeam(sender.player, Team.malis)
+                changePlayerTeam(sender.player, Team.blue)
 
                 sender.player.unit().kill()
 
@@ -408,7 +406,7 @@ class PlagueHandler : Handler {
 
         return closest
     }
-
+    
     @EventHandler
     suspend fun createSurvivorCoreEventHandler(event: EventType.BuildSelectEvent) {
         PlagueVars.stateLock.withLock {
