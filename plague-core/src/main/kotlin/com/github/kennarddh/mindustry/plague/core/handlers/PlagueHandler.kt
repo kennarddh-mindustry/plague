@@ -165,7 +165,10 @@ class PlagueHandler : Handler {
 
             survivorTeamsData[player.team()]?.ownerUUID = newCurrentOwner.uuid()
 
-            newCurrentOwner.sendMessage("[green]You are now the owner of this team because the previous owner left.")
+            Groups.player.filter { survivorTeamsData[player.team()]?.playersUUID?.contains(it.uuid()) ?: false }
+                .forEach {
+                    it.sendMessage("[green]'${newCurrentOwner.plainName()}' is now the owner of this team because the previous owner left.")
+                }
         }
     }
 
@@ -276,7 +279,7 @@ class PlagueHandler : Handler {
     }
 
     @Command(["teamtransferownership"])
-    suspend fun teamTransferOwnership(sender: PlayerCommandSender, @Vararg target: Player) {
+    fun teamTransferOwnership(sender: PlayerCommandSender, @Vararg target: Player) {
         if (sender.player.team() == Team.malis)
             return sender.sendError("You cannot transfer ownership in plague team.")
 
