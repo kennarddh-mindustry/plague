@@ -756,7 +756,6 @@ class PlagueHandler : Handler {
         }
     }
 
-    // 45 minutes after onPlay move to second phase.
     suspend fun onSecondPhase() {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.PlayingSecondPhase
@@ -773,7 +772,6 @@ class PlagueHandler : Handler {
         }
     }
 
-    // 15 minutes after onSecondPhase move to ended.
     suspend fun onEnded() {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.Ended
@@ -783,6 +781,21 @@ class PlagueHandler : Handler {
             runBlocking {
                 updateAllPlayerSpecificRules()
             }
+        }
+
+        val survivorTeams = Vars.state.teams.active.toList().filter { isValidSurvivorTeam(it.team) }
+
+        if (survivorTeams.isEmpty()) return
+
+        runOnMindustryThread {
+            Call.infoMessage(
+                """
+                [green]Survivor teams won.
+                [green]${survivorTeams.joinToString(", ") { "'$it'" }} won.
+                [scarlet]Plague lost.
+                [white]Game will still continue.
+                """.trimIndent()
+            )
         }
     }
 
