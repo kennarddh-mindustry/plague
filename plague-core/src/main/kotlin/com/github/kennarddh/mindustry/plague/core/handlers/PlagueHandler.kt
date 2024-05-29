@@ -496,6 +496,13 @@ class PlagueHandler : Handler {
                 it.health = Float.MAX_VALUE
             }
 
+            // Make sure blue team units cannot be killed
+            Groups.unit.forEach {
+                if (it.team != Team.blue) return@forEach
+
+                it.health = Float.MAX_VALUE
+            }
+
             CoroutineScopes.Main.launch {
                 if (state == PlagueState.Prepare && mapTime >= 2.minutes) {
                     onFirstPhase()
