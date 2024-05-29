@@ -38,6 +38,38 @@ object PlagueBanned {
     val plagueBannedBlocks: Set<Block> = unitConstructorBlocks -
             setOf(Blocks.airFactory, Blocks.additiveReconstructor) +
             setOf(
+                // Serpulo turrets
+                // Wave is not banned because it can be used to extinguish water, but tsunami can be used to attack because it has more damage.
+                Blocks.duo,
+                Blocks.scatter,
+                Blocks.scorch,
+                Blocks.hail,
+                Blocks.lancer,
+                Blocks.arc,
+                Blocks.parallax,
+                Blocks.swarmer,
+                Blocks.salvo,
+                Blocks.segment,
+                Blocks.tsunami,
+                Blocks.fuse,
+                Blocks.ripple,
+                Blocks.cyclone,
+                Blocks.foreshadow,
+                Blocks.spectre,
+                Blocks.meltdown,
+
+                // Erekir turrets
+                Blocks.breach,
+                Blocks.diffuse,
+                Blocks.sublimate,
+                Blocks.titan,
+                Blocks.disperse,
+                Blocks.afflict,
+                Blocks.lustre,
+                Blocks.scathe,
+                Blocks.smite,
+                Blocks.malign,
+
                 // Serpulo walls
                 Blocks.surgeWall,
                 Blocks.surgeWallLarge,
