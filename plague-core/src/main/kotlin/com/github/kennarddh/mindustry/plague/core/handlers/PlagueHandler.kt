@@ -410,6 +410,36 @@ class PlagueHandler : Handler {
     }
 
     @EventHandler
+    fun onCoreDestroyed(event: EventType.BlockDestroyEvent) {
+        if (event.tile.build !is CoreBuild) return
+
+        val coreBuild = event.tile.build as CoreBuild
+
+        // Minus 1 because core have not been destroyed here
+        if (coreBuild.team.cores().size - 1 != 0) return
+
+        val teamData = Vars.state.teams[coreBuild.team]
+
+        runOnMindustryThread {
+            Call.sendMessage("[scarlet]'${coreBuild.team.name}' survivor team lost.")
+
+            runBlocking {
+                teamData.players.forEach {
+                    changePlayerTeam(it, Team.malis)
+
+                    it.unit().kill()
+
+                    Call.sendMessage("[scarlet]'${it.plainName()}' has been infected.")
+                }
+            }
+
+            teamData.units.forEach { it.kill() }
+            teamData.buildings.forEach { it.kill() }
+        }
+    }
+
+
+    @EventHandler
     suspend fun createSurvivorCoreEventHandler(event: EventType.BuildSelectEvent) {
         PlagueVars.stateLock.withLock {
             if (PlagueVars.state != PlagueState.Prepare) return
