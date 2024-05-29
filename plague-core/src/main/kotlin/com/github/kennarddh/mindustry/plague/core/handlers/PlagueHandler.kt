@@ -484,6 +484,8 @@ class PlagueHandler : Handler {
     @EventHandler
     @EventHandlerTrigger(Trigger.update)
     suspend fun onUpdate() {
+        val state = PlagueVars.stateLock.withLock { PlagueVars.state }
+
         runOnMindustryThreadSuspended {
             if (Vars.state.gameOver) return@runOnMindustryThreadSuspended
 
@@ -493,8 +495,6 @@ class PlagueHandler : Handler {
             }
 
             CoroutineScopes.Main.launch {
-                val state = PlagueVars.stateLock.withLock { PlagueVars.state }
-
                 if (state == PlagueState.Prepare && mapTime >= 2.minutes) {
                     onFirstPhase()
                 } else if (state == PlagueState.PlayingFirstPhase && mapTime >= 47.minutes) {
