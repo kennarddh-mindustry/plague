@@ -290,7 +290,7 @@ class PlagueHandler : Handler {
         if (survivorTeamData.ownerUUID != sender.player.uuid())
             return sender.sendError("You are not owner in the team.")
 
-        survivorTeamData.locked != survivorTeamData.locked
+        survivorTeamData.locked = !survivorTeamData.locked
 
         Groups.player.filter { survivorTeamData.playersUUID.contains(it.uuid()) }
             .forEach {
