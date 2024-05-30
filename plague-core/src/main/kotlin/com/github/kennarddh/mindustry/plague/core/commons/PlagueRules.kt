@@ -14,7 +14,6 @@ object PlagueRules {
         rules.hideBannedBlocks = true
         rules.enemyCoreBuildRadius = 0f
 
-
         Team.all.filter { it != Team.malis }.forEach {
             rules.teams[it].unitCrashDamageMultiplier = 0f
         }

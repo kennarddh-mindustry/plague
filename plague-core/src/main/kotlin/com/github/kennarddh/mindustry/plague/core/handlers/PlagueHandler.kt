@@ -1,9 +1,11 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
-import arc.Events
 import arc.math.Mathf
+import arc.util.Reflect
 import arc.util.Time
+import arc.util.Timer
 import com.github.kennarddh.mindustry.genesis.core.Genesis
+import com.github.kennarddh.mindustry.genesis.core.commands.CommandSide
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Command
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Description
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.parameters.Vararg
@@ -20,7 +22,9 @@ import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.genesis.standard.extensions.setRules
 import com.github.kennarddh.mindustry.plague.core.commons.*
+import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
 import com.github.kennarddh.mindustry.plague.core.commons.extensions.toDisplayString
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
@@ -30,6 +34,7 @@ import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.content.UnitTypes
+import mindustry.core.GameState
 import mindustry.core.NetServer
 import mindustry.game.EventType
 import mindustry.game.EventType.Trigger
@@ -38,11 +43,16 @@ import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Iconc
 import mindustry.gen.Player
+import mindustry.maps.MapException
 import mindustry.net.Administration
+import mindustry.net.Administration.Config
+import mindustry.net.Packets.KickReason
+import mindustry.server.ServerControl
 import mindustry.type.ItemStack
 import mindustry.type.UnitType
 import mindustry.world.Block
 import mindustry.world.Tile
+import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -166,20 +176,18 @@ class PlagueHandler : Handler {
     suspend fun onSurvivorTeamDestroyed() {
         PlagueVars.stateLock.withLock {
             if (PlagueVars.state == PlagueState.Ended) {
-                runOnMindustryThread {
-                    Call.infoMessage("[green]All survivors have been destroyed.")
+                Call.infoMessage("[green]All survivors have been destroyed.")
 
-                    Events.fire(EventType.GameOverEvent(Team.derelict))
-                }
+                Logger.info("Gameover survivors dead")
+                restart(Team.derelict)
 
                 return
             }
 
-            runOnMindustryThread {
-                Call.infoMessage("[green]Plague team won the game.")
+            Call.infoMessage("[green]Plague team won the game.")
 
-                Events.fire(EventType.GameOverEvent(Team.malis))
-            }
+            Logger.info("Gameover plague won")
+            restart(Team.malis)
         }
     }
 
@@ -569,6 +577,7 @@ class PlagueHandler : Handler {
     @EventHandler
     @EventHandlerTrigger(Trigger.update)
     suspend fun onUpdate() {
+//        Logger.info("Update ${Groups.player.size()}")
         val state = PlagueVars.stateLock.withLock { PlagueVars.state }
 
         runOnMindustryThreadSuspended {
@@ -607,7 +616,21 @@ class PlagueHandler : Handler {
         totalMapSkipDuration = 0.seconds
         mapStartTime = Clock.System.now()
 
+        Logger.info("Play, players: ${Groups.player.size()}")
+
         runOnMindustryThread {
+            runBlocking {
+                Groups.player.forEach {
+                    Logger.info("${it.plainName()} team ${it.team().name}")
+
+                    it.team(Team.blue)
+
+                    spawnPlayerUnit(it, Team.blue)
+
+                    updatePlayerSpecificRules(it)
+                }
+            }
+
             // Reset rules
             Vars.state.rules = PlagueRules.initRules(Vars.state.rules)
 
@@ -636,10 +659,71 @@ class PlagueHandler : Handler {
         }
     }
 
-    @EventHandler
-    fun onGameOver(event: EventType.GameOverEvent) {
+    suspend fun restart(winner: Team) {
+        Logger.info("Restart")
         survivorTeamsData.clear()
         teamsPlayersUUIDBlacklist.clear()
+
+        val roundExtraTimeDuration = Config.roundExtraTime.num().seconds
+
+        val map = runOnMindustryThreadSuspended {
+            val map = Vars.maps.getNextMap(ServerControl.instance.lastMode, Vars.state.map)
+
+            if (map == null) {
+                Vars.netServer.kickAll(KickReason.gameover)
+                Vars.state.set(GameState.State.menu)
+                Vars.net.closeServer()
+
+                return@runOnMindustryThreadSuspended null
+            }
+
+            Call.infoMessage(
+                """
+                [scarlet]Game over!
+                [white]Next selected map: [white]${map.name()}[white]${if (map.hasTag("author")) " by [white]${map.author()}" else ""}.
+                [white]New game begins in ${roundExtraTimeDuration.toDisplayString()}.
+                """.trimIndent()
+            )
+
+            Vars.state.gameOver = true
+            Call.updateGameOver(winner)
+
+            Logger.info("Selected next map to be '${map.plainName()}'.")
+
+            ServerControl.instance.inGameOverWait = true
+
+            // TODO: When v147 released replace this with ServerControl.instance.cancelPlayTask()
+            Reflect.get<Timer.Task>(ServerControl.instance, "lastTask")?.cancel()
+
+            return@runOnMindustryThreadSuspended map
+        } ?: return
+
+        delay(roundExtraTimeDuration)
+
+        runOnMindustryThread {
+            try {
+                val reloader = PlagueWorldReloader()
+
+                reloader.begin()
+
+                Vars.logic.reset()
+
+                Vars.world.loadMap(map, map.applyRules(ServerControl.instance.lastMode))
+
+                Vars.state.rules = Vars.state.map.applyRules(ServerControl.instance.lastMode)
+                Vars.state.rules = PlagueRules.initRules(Vars.state.rules)
+
+                Vars.logic.play()
+
+                reloader.end()
+
+                ServerControl.instance.inGameOverWait = false
+            } catch (error: MapException) {
+                Logger.error("${error.map.plainName()}: ${error.message}")
+
+                Vars.net.closeServer()
+            }
+        }
     }
 
     fun spawnPlayerUnit(
@@ -660,15 +744,33 @@ class PlagueHandler : Handler {
         unit.add()
     }
 
+    suspend fun setupPlayer(player: Player, playerSpawnDelay: Duration = 0.seconds) {
+        Logger.info("setup ${player.plainName()} team ${player.team().name}")
+        if (player.team() == Team.blue) {
+            Logger.info("setup player")
+
+//            spawnPlayerUnit(player, Team.blue)
+
+            val randomPlagueCore = Team.malis.cores().random()
+
+            CoroutineScopes.Main.launch {
+                delay(playerSpawnDelay)
+
+                runOnMindustryThread {
+                    CoreBlock.playerSpawn(randomPlagueCore.tile, player)
+                }
+            }
+
+            updatePlayerSpecificRules(player)
+        }
+    }
+
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) {
+        Logger.info("Player join ${event.player.plainName()}")
         runOnMindustryThread {
             runBlocking {
-                if (event.player.team() == Team.blue) {
-                    spawnPlayerUnit(event.player, Team.blue)
-
-                    updatePlayerSpecificRules(event.player)
-                }
+                setupPlayer(event.player)
             }
         }
     }
@@ -704,8 +806,15 @@ class PlagueHandler : Handler {
         )
     }
 
+    @Command(["gameover"])
+    suspend fun gameover(sender: CommandSender, team: Team = Team.derelict) {
+        Logger.info("Gameover command")
+        restart(team)
+    }
+
     override suspend fun onInit() {
         Genesis.commandRegistry.removeCommand("sync")
+        Genesis.commandRegistry.removeCommand("gameover", CommandSide.Server)
 
         runOnMindustryThread {
             Vars.netServer.assigner = NetServer.TeamAssigner { player, _ ->

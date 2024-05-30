@@ -51,6 +51,9 @@ class StartHandler : Handler {
 
             PlagueRules.removeUnitsWeapons()
 
+            // Pause server when nobody is online
+            Config.autoPause.set(true)
+
             Vars.state.rules = PlagueRules.initRules(Vars.state.rules)
 
             Vars.logic.play()
