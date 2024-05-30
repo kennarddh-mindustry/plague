@@ -575,8 +575,6 @@ class PlagueHandler : Handler {
     @EventHandler
     @EventHandlerTrigger(Trigger.update)
     suspend fun onUpdate() {
-        val state = PlagueVars.stateLock.withLock { PlagueVars.state }
-
         runOnMindustryThreadSuspended {
             if (Vars.state.gameOver) return@runOnMindustryThreadSuspended
 
@@ -591,15 +589,18 @@ class PlagueHandler : Handler {
 
                 it.health = Float.MAX_VALUE
             }
+        }
 
-            CoroutineScopes.Main.launch {
-                if (state == PlagueState.Prepare && mapTime >= 2.minutes) {
-                    onFirstPhase()
-                } else if (state == PlagueState.PlayingFirstPhase && mapTime >= 47.minutes) {
-                    onSecondPhase()
-                } else if (state == PlagueState.PlayingSecondPhase && mapTime >= 62.minutes) {
-                    onEnded()
-                }
+        // Like this to prevent locking state dead lock
+        PlagueVars.stateLock.withLock {
+            if (PlagueVars.state == PlagueState.Prepare && mapTime >= 2.minutes) {
+                CoroutineScopes.Main.launch { onFirstPhase() }
+            } else if (PlagueVars.state == PlagueState.PlayingFirstPhase && mapTime >= 47.minutes) {
+                CoroutineScopes.Main.launch { onSecondPhase() }
+            } else if (PlagueVars.state == PlagueState.PlayingSecondPhase && mapTime >= 62.minutes) {
+                CoroutineScopes.Main.launch { onEnded() }
+            } else {
+                // Empty else because this 'if' is seen as an expression
             }
         }
     }
@@ -826,9 +827,11 @@ class PlagueHandler : Handler {
 
         runOnMindustryThread {
             runBlocking {
+                Logger.info("Pre ${Vars.state.rules.teams[Team.all[7]].blockDamageMultiplier}")
                 Team.all.filter { isValidSurvivorTeam(it) }.forEach {
-                    it.rules().blockDamageMultiplier *= 1.3f
+                    Vars.state.rules.teams[it].blockDamageMultiplier *= 1.3f
                 }
+                Logger.info("Post ${Vars.state.rules.teams[Team.all[7]].blockDamageMultiplier}")
 
                 updateAllPlayerSpecificRules()
             }
@@ -850,16 +853,14 @@ class PlagueHandler : Handler {
 
         if (survivorTeams.isEmpty()) return
 
-        runOnMindustryThread {
-            Call.infoMessage(
-                """
+        Call.infoMessage(
+            """
                 [green]Survivor teams won.
                 [green]${survivorTeams.joinToString(", ") { "'${it.team.name}'" }} won.
                 [scarlet]Plague lost.
                 [white]Game will still continue.
                 """.trimIndent()
-            )
-        }
+        )
     }
 
     @EventHandler
