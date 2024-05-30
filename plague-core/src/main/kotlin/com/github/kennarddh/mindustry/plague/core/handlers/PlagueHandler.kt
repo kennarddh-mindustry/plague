@@ -164,23 +164,19 @@ class PlagueHandler : Handler {
     }
 
     suspend fun onSurvivorTeamDestroyed() {
-        val survivorTeams = Vars.state.teams.active.toList().filter { isValidSurvivorTeam(it.team) }
-
         PlagueVars.stateLock.withLock {
             if (PlagueVars.state == PlagueState.Ended) {
-                if (survivorTeams.isNotEmpty()) return
-
                 runOnMindustryThread {
-                    Call.infoMessage("[green]Plague team won the game.")
+                    Call.infoMessage("[green]All survivors have been destroyed.")
 
-                    Events.fire(EventType.GameOverEvent(Team.malis))
+                    Events.fire(EventType.GameOverEvent(Team.derelict))
                 }
 
                 return
             }
 
             runOnMindustryThread {
-                Call.infoMessage("[green]All survivors have been destroyed.")
+                Call.infoMessage("[green]Plague team won the game.")
 
                 Events.fire(EventType.GameOverEvent(Team.malis))
             }
