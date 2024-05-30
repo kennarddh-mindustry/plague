@@ -178,7 +178,6 @@ class PlagueHandler : Handler {
             if (PlagueVars.state == PlagueState.Ended) {
                 Call.infoMessage("[green]All survivors have been destroyed.")
 
-                Logger.info("Gameover survivors dead")
                 restart(Team.derelict)
 
                 return
@@ -186,7 +185,6 @@ class PlagueHandler : Handler {
 
             Call.infoMessage("[green]Plague team won the game.")
 
-            Logger.info("Gameover plague won")
             restart(Team.malis)
         }
     }
@@ -577,7 +575,6 @@ class PlagueHandler : Handler {
     @EventHandler
     @EventHandlerTrigger(Trigger.update)
     suspend fun onUpdate() {
-//        Logger.info("Update ${Groups.player.size()}")
         val state = PlagueVars.stateLock.withLock { PlagueVars.state }
 
         runOnMindustryThreadSuspended {
@@ -616,21 +613,7 @@ class PlagueHandler : Handler {
         totalMapSkipDuration = 0.seconds
         mapStartTime = Clock.System.now()
 
-        Logger.info("Play, players: ${Groups.player.size()}")
-
         runOnMindustryThread {
-            runBlocking {
-                Groups.player.forEach {
-                    Logger.info("${it.plainName()} team ${it.team().name}")
-
-                    it.team(Team.blue)
-
-                    spawnPlayerUnit(it, Team.blue)
-
-                    updatePlayerSpecificRules(it)
-                }
-            }
-
             // Reset rules
             Vars.state.rules = PlagueRules.initRules(Vars.state.rules)
 
@@ -726,48 +709,24 @@ class PlagueHandler : Handler {
         }
     }
 
-    fun spawnPlayerUnit(
-        player: Player,
-        team: Team,
-        x: Float = Vars.state.map.width / 2f * Vars.tilesize,
-        y: Float = Vars.state.map.height / 2f * Vars.tilesize
-    ) {
-        val unit = UnitTypes.gamma.create(team)
-
-        player.set(x, y)
-
-        unit.set(x, y)
-        unit.rotation(90.0f)
-        unit.impulse(0.0f, 3.0f)
-        unit.spawnedByCore(true)
-        unit.controller(player)
-        unit.add()
-    }
-
     suspend fun setupPlayer(player: Player, playerSpawnDelay: Duration = 0.seconds) {
-        Logger.info("setup ${player.plainName()} team ${player.team().name}")
-        if (player.team() == Team.blue) {
-            Logger.info("setup player")
+        if (player.team() != Team.blue) return
 
-//            spawnPlayerUnit(player, Team.blue)
+        val randomPlagueCore = Team.malis.cores().random()
 
-            val randomPlagueCore = Team.malis.cores().random()
+        CoroutineScopes.Main.launch {
+            delay(playerSpawnDelay)
 
-            CoroutineScopes.Main.launch {
-                delay(playerSpawnDelay)
-
-                runOnMindustryThread {
-                    CoreBlock.playerSpawn(randomPlagueCore.tile, player)
-                }
+            runOnMindustryThread {
+                CoreBlock.playerSpawn(randomPlagueCore.tile, player)
             }
-
-            updatePlayerSpecificRules(player)
         }
+
+        updatePlayerSpecificRules(player)
     }
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) {
-        Logger.info("Player join ${event.player.plainName()}")
         runOnMindustryThread {
             runBlocking {
                 setupPlayer(event.player)
@@ -808,7 +767,6 @@ class PlagueHandler : Handler {
 
     @Command(["gameover"])
     suspend fun gameover(sender: CommandSender, team: Team = Team.derelict) {
-        Logger.info("Gameover command")
         restart(team)
     }
 
