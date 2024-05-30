@@ -827,11 +827,9 @@ class PlagueHandler : Handler {
 
         runOnMindustryThread {
             runBlocking {
-                Logger.info("Pre ${Vars.state.rules.teams[Team.all[7]].blockDamageMultiplier}")
                 Team.all.filter { isValidSurvivorTeam(it) }.forEach {
                     Vars.state.rules.teams[it].blockDamageMultiplier *= 1.3f
                 }
-                Logger.info("Post ${Vars.state.rules.teams[Team.all[7]].blockDamageMultiplier}")
 
                 updateAllPlayerSpecificRules()
             }
