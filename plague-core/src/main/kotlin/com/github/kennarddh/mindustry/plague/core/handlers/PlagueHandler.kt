@@ -791,7 +791,7 @@ class PlagueHandler : Handler {
             Call.infoMessage(
                 """
                 [green]Survivor teams won.
-                [green]${survivorTeams.joinToString(", ") { "'$it'" }} won.
+                [green]${survivorTeams.joinToString(", ") { "'${it.team.name}'" }} won.
                 [scarlet]Plague lost.
                 [white]Game will still continue.
                 """.trimIndent()
