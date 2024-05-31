@@ -827,8 +827,6 @@ class PlagueHandler : Handler {
         runOnMindustryThread {
             Vars.state.rules.enemyCoreBuildRadius = Vars.state.map.rules().enemyCoreBuildRadius
 
-            Call.setRules(Vars.state.rules)
-
             runBlocking {
                 updateAllPlayerSpecificRules()
             }
