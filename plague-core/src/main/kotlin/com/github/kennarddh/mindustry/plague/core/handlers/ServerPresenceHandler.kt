@@ -1,7 +1,7 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
-import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
+import com.github.kennarddh.mindustry.plague.core.commons.Logger
 import mindustry.net.Administration.Config
 
 class ServerPresenceHandler : Handler {

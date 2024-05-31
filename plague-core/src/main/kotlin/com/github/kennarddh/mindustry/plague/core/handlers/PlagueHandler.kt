@@ -1,6 +1,7 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
 import arc.math.Mathf
+import arc.util.Align
 import arc.util.Reflect
 import arc.util.Time
 import arc.util.Timer
@@ -20,12 +21,13 @@ import com.github.kennarddh.mindustry.genesis.core.events.annotations.EventHandl
 import com.github.kennarddh.mindustry.genesis.core.filters.FilterType
 import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
+import com.github.kennarddh.mindustry.genesis.standard.extensions.infoPopup
 import com.github.kennarddh.mindustry.genesis.standard.extensions.setRules
 import com.github.kennarddh.mindustry.genesis.standard.handlers.tap.events.DoubleTap
 import com.github.kennarddh.mindustry.plague.core.commands.validations.Admin
 import com.github.kennarddh.mindustry.plague.core.commons.*
-import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
 import com.github.kennarddh.mindustry.plague.core.commons.extensions.toDisplayString
+import com.github.kennarddh.mindustry.plague.core.commons.extensions.toMinutesDisplayString
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -62,6 +64,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.pow
+import kotlin.math.round
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -78,7 +81,7 @@ class PlagueHandler : Handler {
     private lateinit var mapStartTime: Instant
     private var totalMapSkipDuration: Duration = 0.seconds
 
-    private var lastPlagueMultiierUpdatesInMapTimeMinute: Long = 0
+    private var lastMinuteUpdatesInMapTimeMinute: Long = -1
 
     private val mapTime: Duration
         get() {
@@ -582,6 +585,23 @@ class PlagueHandler : Handler {
         }
     }
 
+
+    private suspend fun updatePlayerHUD(player: Player) {
+        val state = PlagueVars.stateLock.withLock { PlagueVars.state }
+
+        player.infoPopup(
+            """
+            State: ${state.displayName}
+            Map Time: ${mapTime.toMinutesDisplayString()}
+            Plague Unit Multiplier: ${round(getPlagueUnitMultiplier()).toInt()}x
+            ${if (totalMapSkipDuration == Duration.ZERO) "" else "Map Skip Duration: ${totalMapSkipDuration.toDisplayString()}"}
+            
+            Run [accent]/hud[white] to toggle this.
+            """.trimIndent(),
+            60f, Align.topLeft, 200, 0, 0, 100
+        )
+    }
+
     @EventHandler
     @EventHandlerTrigger(Trigger.update)
     suspend fun onUpdate() {
@@ -600,8 +620,8 @@ class PlagueHandler : Handler {
                 it.health = Float.MAX_VALUE
             }
 
-            if (lastPlagueMultiierUpdatesInMapTimeMinute != mapTime.inWholeMinutes) {
-                lastPlagueMultiierUpdatesInMapTimeMinute = mapTime.inWholeMinutes
+            if (lastMinuteUpdatesInMapTimeMinute != mapTime.inWholeMinutes) {
+                lastMinuteUpdatesInMapTimeMinute = mapTime.inWholeMinutes
 
                 val plagueUnitMultiplier = getPlagueUnitMultiplier()
 
@@ -615,6 +635,10 @@ class PlagueHandler : Handler {
 
                 runBlocking {
                     updateAllPlayerSpecificRules()
+
+                    Groups.player.forEach {
+                        updatePlayerHUD(it)
+                    }
                 }
             }
         }
@@ -748,6 +772,8 @@ class PlagueHandler : Handler {
                 CoreBlock.playerSpawn(randomPlagueCore.tile, player)
             }
         }
+
+        updatePlayerHUD(player)
 
         updatePlayerSpecificRules(player)
     }

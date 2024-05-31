@@ -6,9 +6,9 @@ import arc.util.Timer
 import com.github.kennarddh.mindustry.genesis.core.commons.runOnMindustryThread
 import com.github.kennarddh.mindustry.genesis.core.events.annotations.EventHandler
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
+import com.github.kennarddh.mindustry.plague.core.commons.Logger
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueRules
 import com.github.kennarddh.mindustry.plague.core.commons.PlagueVars
-import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
 import kotlinx.coroutines.delay
 import mindustry.Vars
 import mindustry.game.EventType
@@ -52,7 +52,7 @@ class StartHandler : Handler {
             PlagueRules.removeUnitsWeapons()
 
             Vars.state.rules = PlagueRules.initRules(Vars.state.rules)
-            
+
             Vars.logic.play()
 
             Vars.netServer.openServer()

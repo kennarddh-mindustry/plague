@@ -4,7 +4,7 @@ import com.github.kennarddh.mindustry.genesis.core.Genesis
 import com.github.kennarddh.mindustry.genesis.core.commons.AbstractPlugin
 import com.github.kennarddh.mindustry.plague.core.commands.validations.Admin
 import com.github.kennarddh.mindustry.plague.core.commands.validations.validateAdmin
-import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
+import com.github.kennarddh.mindustry.plague.core.commons.Logger
 import com.github.kennarddh.mindustry.plague.core.handlers.PlagueHandler
 import com.github.kennarddh.mindustry.plague.core.handlers.ServerPresenceHandler
 import com.github.kennarddh.mindustry.plague.core.handlers.StartHandler

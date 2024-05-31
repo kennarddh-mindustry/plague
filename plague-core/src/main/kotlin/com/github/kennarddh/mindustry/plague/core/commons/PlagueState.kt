@@ -1,9 +1,9 @@
 package com.github.kennarddh.mindustry.plague.core.commons
 
-enum class PlagueState {
-    Prepare,
-    PlayingFirstPhase,
-    PlayingSecondPhase,
-    Ended,
-    Gameover
+enum class PlagueState(val displayName: String) {
+    Prepare("Prepare"),
+    PlayingFirstPhase("Playing First Phase"),
+    PlayingSecondPhase("Playing Second Phase"),
+    Ended("Ended"),
+    Gameover("Gameover")
 }
