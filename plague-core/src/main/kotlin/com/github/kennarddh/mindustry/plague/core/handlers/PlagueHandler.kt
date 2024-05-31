@@ -852,6 +852,17 @@ class PlagueHandler : Handler {
                 updateAllPlayerSpecificRules()
             }
 
+            if (!Vars.state.teams.active.any { isValidSurvivorTeam(it.team) }) {
+                // No survivors
+                Call.infoMessage("No survivors.")
+
+                CoroutineScopes.Main.launch {
+                    restart(Team.derelict)
+                }
+
+                return@runOnMindustryThread
+            }
+
             // Move every no team player to plague team
             Groups.player.filter { it.team() === Team.blue }.forEach {
                 runBlocking {
