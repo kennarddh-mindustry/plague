@@ -83,6 +83,8 @@ class PlagueHandler : Handler {
 
     private var lastMinuteUpdatesInMapTimeMinute: Long = -1
 
+    private val playersWithDisabledHUD = Collections.synchronizedSet(mutableSetOf<Player>())
+
     private val mapTime: Duration
         get() {
             if (::mapStartTime.isInitialized)
@@ -585,8 +587,22 @@ class PlagueHandler : Handler {
         }
     }
 
+    @Command(["hud"])
+    fun toggleHUD(sender: PlayerCommandSender) {
+        val wasDisabled = playersWithDisabledHUD.contains(sender.player)
+
+        if (wasDisabled) {
+            playersWithDisabledHUD.remove(sender.player)
+        } else {
+            playersWithDisabledHUD.add(sender.player)
+        }
+
+        sender.sendSuccess("HUD will be ${if (wasDisabled) "shown" else "hidden"} in a moment.")
+    }
 
     private suspend fun updatePlayerHUD(player: Player) {
+        if (playersWithDisabledHUD.contains(player)) return
+
         val state = PlagueVars.stateLock.withLock { PlagueVars.state }
 
         val durationToNextInfo = (mapTime.inWholeMinutes + 1).minutes - mapTime
@@ -676,6 +692,8 @@ class PlagueHandler : Handler {
 
     @EventHandler
     fun onPlayerLeave(event: EventType.PlayerLeave) {
+        playersWithDisabledHUD.remove(event.player)
+
         val teamOwned = survivorTeamsData.entries.find { it.value.ownerUUID == event.player.uuid() }
 
         if (teamOwned == null) return
