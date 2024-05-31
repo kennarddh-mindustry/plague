@@ -78,6 +78,8 @@ class PlagueHandler : Handler {
     private lateinit var mapStartTime: Instant
     private var totalMapSkipDuration: Duration = 0.seconds
 
+    private var lastPlagueMultiierUpdatesInMapTimeMinute: Long = 0
+
     private val mapTime: Duration
         get() {
             if (::mapStartTime.isInitialized)
@@ -578,8 +580,6 @@ class PlagueHandler : Handler {
         }
     }
 
-    var lastPlagueMultiierUpdatesInMapTimeMinute: Long = 0
-
     @EventHandler
     @EventHandlerTrigger(Trigger.update)
     suspend fun onUpdate() {
@@ -925,7 +925,7 @@ class PlagueHandler : Handler {
 
             val remainingItems = vault.items()
 
-            event.tile.build.tile.setNet(Blocks.coreShard, event.tile.team(), 0);
+            event.tile.build.tile.setNet(Blocks.coreShard, event.tile.team(), 0)
 
             // Refund remaining items in vault if it wasn't linked to core
             if (vault.linkedCore == null) {
