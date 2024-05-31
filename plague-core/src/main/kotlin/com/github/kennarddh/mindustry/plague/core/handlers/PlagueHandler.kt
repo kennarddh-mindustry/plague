@@ -21,6 +21,7 @@ import com.github.kennarddh.mindustry.genesis.core.filters.FilterType
 import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.genesis.standard.extensions.setRules
+import com.github.kennarddh.mindustry.genesis.standard.handlers.tap.events.DoubleTap
 import com.github.kennarddh.mindustry.plague.core.commons.*
 import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
 import com.github.kennarddh.mindustry.plague.core.commons.extensions.toDisplayString
@@ -54,6 +55,7 @@ import mindustry.world.Block
 import mindustry.world.Tile
 import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
+import mindustry.world.blocks.storage.StorageBlock.StorageBuild
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.floor
@@ -64,6 +66,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class PlagueHandler : Handler {
     private val monoReward = listOf(ItemStack(Items.copper, 300), ItemStack(Items.lead, 300))
+    private val newCoreCost = listOf(ItemStack(Items.thorium, 1000))
 
     private val survivorTeamsData: MutableMap<Team, SurvivorTeamData> = ConcurrentHashMap()
 
@@ -859,6 +862,39 @@ class PlagueHandler : Handler {
                 [white]Game will still continue.
                 """.trimIndent()
         )
+    }
+
+    @EventHandler
+    fun onDoubleTap(event: DoubleTap) {
+        if (!isValidSurvivorTeam(event.player.team())) return
+
+        if (event.tile.build !is StorageBuild) return
+
+        if (event.tile.block().name != "vault") return
+
+        val vault = event.tile.build as StorageBuild
+
+        runOnMindustryThread {
+            val enoughResources = newCoreCost.all { vault.items().get(it.item) >= it.amount }
+
+            if (!enoughResources)
+                return@runOnMindustryThread event.player.sendMessage("[scarlet]Not enough resources to convert vault to core.")
+
+            newCoreCost.forEach {
+                vault.items().remove(it)
+            }
+
+            val remainingItems = vault.items()
+
+            event.tile.build.tile.setNet(Blocks.coreShard, event.tile.team(), 0);
+
+            // Refund remaining items in vault if it wasn't linked to core
+            if (vault.linkedCore == null) {
+                remainingItems.each { item, amount ->
+                    event.tile.team().items().add(item, amount)
+                }
+            }
+        }
     }
 
     @EventHandler
