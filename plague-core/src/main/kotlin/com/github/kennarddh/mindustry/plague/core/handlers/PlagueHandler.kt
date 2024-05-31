@@ -597,7 +597,7 @@ class PlagueHandler : Handler {
             }
         }
 
-        // Like this to prevent locking state dead lock
+        // Like this to prevent locking state deadlock
         PlagueVars.stateLock.withLock {
             if (PlagueVars.state == PlagueState.Prepare && mapTime >= 2.minutes) {
                 CoroutineScopes.Main.launch { onFirstPhase() }
