@@ -60,6 +60,7 @@ import mindustry.world.blocks.storage.StorageBlock.StorageBuild
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.floor
+import kotlin.math.max
 import kotlin.math.pow
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -732,7 +733,7 @@ class PlagueHandler : Handler {
     }
 
     fun getPlagueUnitMultiplier(): Float {
-        val mapTimeInMinutes = mapTime.inWholeMinutes.toInt()
+        val mapTimeInMinutes = max(1, mapTime.inWholeMinutes.toInt())
 
         if (mapTimeInMinutes < 40)
             return 1.2f.pow(mapTimeInMinutes / 10f)
