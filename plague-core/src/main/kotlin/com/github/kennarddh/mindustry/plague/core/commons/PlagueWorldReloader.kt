@@ -67,7 +67,7 @@ class PlagueWorldReloader {
                 it.team(Vars.netServer.assignTeam(it, players))
 
                 // The player won't spawn if spawned immediately
-                Genesis.getHandler<PlagueHandler>()?.setupPlayer(it, 1.seconds)
+                Genesis.getHandler<PlagueHandler>()?.setupPlayer(it, 1.5.seconds)
 
                 Vars.netServer.sendWorldData(it)
             }

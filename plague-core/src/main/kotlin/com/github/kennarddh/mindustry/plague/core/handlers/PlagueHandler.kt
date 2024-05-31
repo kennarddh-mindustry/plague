@@ -182,19 +182,21 @@ class PlagueHandler : Handler {
     }
 
     suspend fun onSurvivorTeamDestroyed() {
-        PlagueVars.stateLock.withLock {
-            if (PlagueVars.state == PlagueState.Ended) {
-                Call.infoMessage("[green]All survivors have been destroyed.")
+        val state = PlagueVars.stateLock.withLock { PlagueVars.state }
 
-                restart(Team.derelict)
+        if (state == PlagueState.Gameover) return
 
-                return
-            }
+        if (state == PlagueState.Ended) {
+            Call.infoMessage("[green]All survivors have been destroyed.")
 
-            Call.infoMessage("[green]Plague team won the game.")
+            restart(Team.derelict)
 
-            restart(Team.malis)
+            return
         }
+
+        Call.infoMessage("[green]Plague team won the game.")
+
+        restart(Team.malis)
     }
 
     fun leaveSurvivorTeam(player: Player) {
@@ -641,11 +643,6 @@ class PlagueHandler : Handler {
         mapStartTime = Clock.System.now()
 
         runOnMindustryThread {
-            // Reset rules
-            Vars.state.rules = PlagueRules.initRules(Vars.state.rules)
-
-            Call.setRules(Vars.state.rules)
-
             Team.malis.core().items().clear()
         }
     }
@@ -670,6 +667,12 @@ class PlagueHandler : Handler {
     }
 
     suspend fun restart(winner: Team) {
+        PlagueVars.stateLock.withLock {
+            if (PlagueVars.state == PlagueState.Gameover) return
+
+            PlagueVars.state = PlagueState.Gameover
+        }
+
         survivorTeamsData.clear()
         teamsPlayersUUIDBlacklist.clear()
 
@@ -714,8 +717,6 @@ class PlagueHandler : Handler {
                 val reloader = PlagueWorldReloader()
 
                 reloader.begin()
-
-                Vars.logic.reset()
 
                 Vars.world.loadMap(map, map.applyRules(ServerControl.instance.lastMode))
 

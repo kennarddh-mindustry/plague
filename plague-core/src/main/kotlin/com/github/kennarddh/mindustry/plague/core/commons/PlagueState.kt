@@ -4,5 +4,6 @@ enum class PlagueState {
     Prepare,
     PlayingFirstPhase,
     PlayingSecondPhase,
-    Ended
+    Ended,
+    Gameover
 }

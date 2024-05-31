@@ -217,6 +217,7 @@ object PlagueBanned {
                 PlagueState.Prepare,
                 PlagueState.PlayingFirstPhase -> allUnits - alwaysAllowedUnits - serpuloGroundUnits - serpuloNavalUnits - erekirTankUnits - erekirMechUnits
 
+                PlagueState.Gameover,
                 PlagueState.PlayingSecondPhase,
                 PlagueState.Ended -> allUnits - alwaysAllowedUnits - serpuloGroundUnits - serpuloNavalUnits - serpuloAirUnits - erekirTankUnits - erekirShipUnits - erekirMechUnits
             }
@@ -234,6 +235,7 @@ object PlagueBanned {
     suspend fun getCurrentSurvivorsBannedUnits(inStateLock: Boolean = false): Set<UnitType> {
         val innerMethod = { state: PlagueState ->
             when (state) {
+                PlagueState.Gameover,
                 PlagueState.Prepare,
                 PlagueState.PlayingFirstPhase,
                 PlagueState.PlayingSecondPhase,
@@ -256,6 +258,7 @@ object PlagueBanned {
             when (state) {
                 PlagueState.Prepare -> plagueBannedBlocks
 
+                PlagueState.Gameover,
                 PlagueState.PlayingFirstPhase,
                 PlagueState.PlayingSecondPhase,
                 PlagueState.Ended -> plagueBannedBlocks - unitConstructorBlocks
