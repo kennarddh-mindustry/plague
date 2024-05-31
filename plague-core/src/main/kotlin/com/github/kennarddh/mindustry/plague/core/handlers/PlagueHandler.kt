@@ -60,6 +60,7 @@ import mindustry.world.blocks.storage.StorageBlock.StorageBuild
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.floor
+import kotlin.math.pow
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -728,6 +729,21 @@ class PlagueHandler : Handler {
         }
 
         updatePlayerSpecificRules(player)
+    }
+
+    fun getPlagueUnitMultiplier(): Float {
+        val mapTimeInMinutes = mapTime.inWholeMinutes.toInt()
+
+        if (mapTimeInMinutes < 40)
+            return 1.2f.pow(mapTimeInMinutes / 10f)
+
+        if (mapTimeInMinutes in 40..<80)
+            return 2.07f * 1.4f.pow((mapTimeInMinutes - 40) / 10f)
+
+        if (mapTimeInMinutes in 80..<120)
+            return 7.96f * 1.6f.pow((mapTimeInMinutes - 80) / 10f)
+
+        return 52.2f * 1.8f.pow((mapTimeInMinutes - 120) / 10f)
     }
 
     @EventHandler
