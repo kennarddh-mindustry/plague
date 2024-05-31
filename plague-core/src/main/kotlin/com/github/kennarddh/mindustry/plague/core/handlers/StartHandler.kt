@@ -52,7 +52,7 @@ class StartHandler : Handler {
             PlagueRules.removeUnitsWeapons()
 
             Vars.state.rules = PlagueRules.initRules(Vars.state.rules)
-
+            
             Vars.logic.play()
 
             Vars.netServer.openServer()
