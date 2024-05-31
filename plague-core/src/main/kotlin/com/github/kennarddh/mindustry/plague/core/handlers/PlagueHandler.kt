@@ -22,6 +22,7 @@ import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.genesis.standard.extensions.setRules
 import com.github.kennarddh.mindustry.genesis.standard.handlers.tap.events.DoubleTap
+import com.github.kennarddh.mindustry.plague.core.commands.validations.Admin
 import com.github.kennarddh.mindustry.plague.core.commons.*
 import com.github.kennarddh.mindustry.plague.core.commons.extensions.Logger
 import com.github.kennarddh.mindustry.plague.core.commons.extensions.toDisplayString
@@ -752,6 +753,7 @@ class PlagueHandler : Handler {
     }
 
     @Command(["skiptime"])
+    @Admin
     fun skipTime(sender: CommandSender, duration: Duration) {
         totalMapSkipDuration += duration
 
@@ -759,6 +761,7 @@ class PlagueHandler : Handler {
     }
 
     @Command(["spawnunit"])
+    @Admin
     fun spawnUnit(sender: PlayerCommandSender, unitType: UnitType, team: Team = sender.player.team()) {
         unitType.spawn(sender.player, team)
 
@@ -770,6 +773,7 @@ class PlagueHandler : Handler {
     }
 
     @Command(["gameover"])
+    @Admin
     suspend fun gameover(sender: CommandSender, team: Team = Team.derelict) {
         restart(team)
     }
