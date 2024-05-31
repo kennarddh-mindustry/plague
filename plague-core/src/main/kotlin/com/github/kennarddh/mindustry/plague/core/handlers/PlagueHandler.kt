@@ -589,6 +589,8 @@ class PlagueHandler : Handler {
     private suspend fun updatePlayerHUD(player: Player) {
         val state = PlagueVars.stateLock.withLock { PlagueVars.state }
 
+        val durationToNextInfo = (mapTime.inWholeMinutes + 1).minutes - mapTime
+
         player.infoPopup(
             """
             State: ${state.displayName}
@@ -598,7 +600,8 @@ class PlagueHandler : Handler {
             
             Run [accent]/hud[white] to toggle this.
             """.trimIndent(),
-            60f, Align.topLeft, 200, 0, 0, 100
+            durationToNextInfo.inWholeSeconds.toFloat(),
+            Align.topLeft, 200, 0, 0, 100
         )
     }
 
