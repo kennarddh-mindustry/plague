@@ -578,6 +578,8 @@ class PlagueHandler : Handler {
         }
     }
 
+    var lastPlagueMultiierUpdatesInMapTimeMinute: Long = 0
+
     @EventHandler
     @EventHandlerTrigger(Trigger.update)
     suspend fun onUpdate() {
@@ -594,6 +596,24 @@ class PlagueHandler : Handler {
                 if (it.team != Team.blue) return@forEach
 
                 it.health = Float.MAX_VALUE
+            }
+
+            if (lastPlagueMultiierUpdatesInMapTimeMinute != mapTime.inWholeMinutes) {
+                lastPlagueMultiierUpdatesInMapTimeMinute = mapTime.inWholeMinutes
+
+                val plagueUnitMultiplier = getPlagueUnitMultiplier()
+
+                Vars.state.rules.teams[Team.malis].unitDamageMultiplier =
+                    (Vars.state.map.rules().teams[Team.malis]?.unitDamageMultiplier
+                        ?: Vars.state.map.rules().unitDamageMultiplier) * plagueUnitMultiplier
+
+                Vars.state.rules.teams[Team.malis].unitHealthMultiplier =
+                    (Vars.state.map.rules().teams[Team.malis]?.unitHealthMultiplier
+                        ?: Vars.state.map.rules().unitHealthMultiplier) * plagueUnitMultiplier
+
+                runBlocking {
+                    updateAllPlayerSpecificRules()
+                }
             }
         }
 
@@ -650,7 +670,6 @@ class PlagueHandler : Handler {
     }
 
     suspend fun restart(winner: Team) {
-        Logger.info("Restart")
         survivorTeamsData.clear()
         teamsPlayersUUIDBlacklist.clear()
 
@@ -764,6 +783,7 @@ class PlagueHandler : Handler {
                 State: ${PlagueVars.state.name}
                 Map Time: ${mapTime.toDisplayString()}
                 Map Skip Duration: ${totalMapSkipDuration.toDisplayString()}
+                Plague Unit Multiplier: ${getPlagueUnitMultiplier()}
                 """.trimIndent()
             )
         }
