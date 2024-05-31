@@ -686,7 +686,7 @@ class PlagueHandler : Handler {
         mapStartTime = Clock.System.now()
 
         runOnMindustryThread {
-            Team.malis.core().items().clear()
+            Team.malis.core()?.items()?.clear()
         }
     }
 
