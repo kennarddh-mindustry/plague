@@ -843,6 +843,9 @@ class PlagueHandler : Handler {
         return 52.2f * 1.8f.pow((mapTimeInMinutes - 120) / 10f)
     }
 
+    /**
+     * This is also called when player is done loading new map
+     */
     @EventHandler
     fun onPlayerConnectionConfirmed(event: EventType.PlayerConnectionConfirmed) {
         if (!event.player.dead()) return
