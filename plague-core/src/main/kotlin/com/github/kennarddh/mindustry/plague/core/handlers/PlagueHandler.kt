@@ -891,23 +891,25 @@ class PlagueHandler : Handler {
     fun spawnUnit(
         sender: PlayerCommandSender,
         unitType: UnitType,
+        @GTE(1) @LTE(20) count: Int = 1,
         team: Team = sender.player.team(),
-        @GTE(1) @LTE(20) count: Int = 1
     ) {
-        var spawnedUnits = 0
+        runOnMindustryThread {
+            var validSpawnedUnits = 0
 
-        repeat(count) {
-            val unit = unitType.spawn(sender.player, team)
+            repeat(count) {
+                val unit = unitType.spawn(sender.player, team)
 
-            if (unit != null)
-                spawnedUnits += 1
+                if (unit.isValid)
+                    validSpawnedUnits += 1
+            }
+
+            sender.sendSuccess(
+                "Spawned $validSpawnedUnits '${unitType.name}' at (${floor(sender.player.x / Vars.tilesize).toInt()}, ${
+                    floor(sender.player.y / Vars.tilesize).toInt()
+                })"
+            )
         }
-
-        sender.sendSuccess(
-            "Spawned ${spawnedUnits} '${unitType.name}' at (${floor(sender.player.x / Vars.tilesize).toInt()}, ${
-                floor(sender.player.y / Vars.tilesize).toInt()
-            })"
-        )
     }
 
     @Command(["gameover"])
