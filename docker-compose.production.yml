@@ -32,5 +32,26 @@ services:
           memory: 1G
           cpus: '1'
 
+  portainer:
+    image: portainer/portainer-ce:2.19.4-alpine
+    init: true
+    ports:
+      - "8000:8000"
+      - "9443:9443"
+    volumes:
+      - portainer-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - plague
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+          cpus: '0.5'
+
+volumes:
+  portainer-data:
+
 networks:
   plague:
