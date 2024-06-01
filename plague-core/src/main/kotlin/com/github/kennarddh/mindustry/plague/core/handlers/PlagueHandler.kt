@@ -970,6 +970,8 @@ class PlagueHandler : Handler {
 
         if (event.tile.block().name != "vault") return
 
+        if (event.tile.build.team != event.player.team()) return
+
         val vault = event.tile.build as StorageBuild
 
         runOnMindustryThread {
