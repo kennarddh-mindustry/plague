@@ -964,7 +964,7 @@ class PlagueHandler : Handler {
             }
 
             // Move every no team player to plague team
-            Groups.player.filter { it.team() === Team.blue }.forEach {
+            Groups.player.filter { it.team() == Team.blue }.forEach {
                 runBlocking {
                     changePlayerTeam(it, Team.malis)
 
