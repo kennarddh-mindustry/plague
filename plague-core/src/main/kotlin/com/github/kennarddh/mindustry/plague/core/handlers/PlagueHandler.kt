@@ -646,6 +646,7 @@ class PlagueHandler : Handler {
             ${if (totalMapSkipDuration == Duration.ZERO) "" else "Map Skip Duration: ${totalMapSkipDuration.toDisplayString()}"}
             
             Run [accent]/hud[white] to toggle this.
+            Run [accent]/state[white] for more detailed data.
             """.trimIndent(),
             durationToNextInfo.inWholeSeconds.toFloat(),
             Align.topLeft, 200, 0, 0, 100
