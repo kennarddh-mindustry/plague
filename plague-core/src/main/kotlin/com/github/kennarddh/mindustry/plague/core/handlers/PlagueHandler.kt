@@ -866,9 +866,9 @@ class PlagueHandler : Handler {
         PlagueVars.stateLock.withLock {
             sender.sendSuccess(
                 """
-                State: ${PlagueVars.state.name}
+                State: ${PlagueVars.state.displayName}
                 Map Time: ${mapTime.toDisplayString()}
-                Map Skip Duration: ${totalMapSkipDuration.toDisplayString()}
+                Map Skip Duration: ${totalMapSkipDuration.toDisplayString()}x
                 Plague Unit Multiplier: ${getPlagueUnitMultiplier()}
                 """.trimIndent()
             )
