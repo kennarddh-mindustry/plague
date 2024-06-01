@@ -810,17 +810,11 @@ class PlagueHandler : Handler {
         }
     }
 
-    suspend fun setupPlayer(player: Player, playerSpawnDelay: Duration = 0.seconds) {
-        if (player.team() != Team.blue) return
+    suspend fun setupPlayer(player: Player) {
+        if (player.team() == Team.blue) {
+            val randomPlagueCore = Team.malis.cores().random()
 
-        val randomPlagueCore = Team.malis.cores().random()
-
-        CoroutineScopes.Main.launch {
-            delay(playerSpawnDelay)
-
-            runOnMindustryThread {
-                CoreBlock.playerSpawn(randomPlagueCore.tile, player)
-            }
+            CoreBlock.playerSpawn(randomPlagueCore.tile, player)
         }
 
         updatePlayerHUD(player)
