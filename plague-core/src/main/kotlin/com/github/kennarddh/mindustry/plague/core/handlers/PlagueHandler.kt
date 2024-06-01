@@ -833,6 +833,17 @@ class PlagueHandler : Handler {
         }
     }
 
+    @EventHandler
+    fun onPlayerConnectionConfirmed(event: EventType.PlayerConnectionConfirmed) {
+        if (!event.player.dead()) return
+
+        runOnMindustryThread {
+            runBlocking {
+                setupPlayer(event.player)
+            }
+        }
+    }
+
     @Command(["state"])
     suspend fun getState(sender: CommandSender) {
         PlagueVars.stateLock.withLock {

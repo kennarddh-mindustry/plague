@@ -1,13 +1,10 @@
 package com.github.kennarddh.mindustry.plague.core.commons
 
-import com.github.kennarddh.mindustry.genesis.core.Genesis
-import com.github.kennarddh.mindustry.plague.core.handlers.PlagueHandler
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
-import kotlin.time.Duration.Companion.seconds
 
 class PlagueWorldReloader {
     var players = mutableSetOf<Player>()
@@ -65,9 +62,6 @@ class PlagueWorldReloader {
                 it.admin = wasAdmin
 
                 it.team(Vars.netServer.assignTeam(it, players))
-
-                // The player won't spawn if spawned immediately
-                Genesis.getHandler<PlagueHandler>()?.setupPlayer(it, 1.5.seconds)
 
                 Vars.netServer.sendWorldData(it)
             }
