@@ -191,6 +191,8 @@ class PlagueHandler : Handler {
 
         if (state == PlagueState.Gameover) return
 
+        if (survivorTeamsData.size != 0) return
+
         if (state == PlagueState.Ended) {
             Call.infoMessage("[green]All survivors have been destroyed.")
 
