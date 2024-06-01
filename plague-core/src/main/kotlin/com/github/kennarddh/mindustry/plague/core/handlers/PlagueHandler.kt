@@ -21,6 +21,8 @@ import com.github.kennarddh.mindustry.genesis.core.events.annotations.EventHandl
 import com.github.kennarddh.mindustry.genesis.core.filters.FilterType
 import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
+import com.github.kennarddh.mindustry.genesis.standard.commands.parameters.validations.numbers.GTE
+import com.github.kennarddh.mindustry.genesis.standard.commands.parameters.validations.numbers.LTE
 import com.github.kennarddh.mindustry.genesis.standard.extensions.infoPopup
 import com.github.kennarddh.mindustry.genesis.standard.extensions.setRules
 import com.github.kennarddh.mindustry.genesis.standard.handlers.tap.events.DoubleTap
@@ -886,11 +888,23 @@ class PlagueHandler : Handler {
 
     @Command(["spawnunit"])
     @Admin
-    fun spawnUnit(sender: PlayerCommandSender, unitType: UnitType, team: Team = sender.player.team()) {
-        unitType.spawn(sender.player, team)
+    fun spawnUnit(
+        sender: PlayerCommandSender,
+        unitType: UnitType,
+        team: Team = sender.player.team(),
+        @GTE(1) @LTE(20) count: Int = 1
+    ) {
+        var spawnedUnits = 0
+
+        repeat(count) {
+            val unit = unitType.spawn(sender.player, team)
+
+            if (unit != null)
+                spawnedUnits += 1
+        }
 
         sender.sendSuccess(
-            "Spawned '${unitType.name}' at (${floor(sender.player.x / Vars.tilesize).toInt()}, ${
+            "Spawned ${spawnedUnits} '${unitType.name}' at (${floor(sender.player.x / Vars.tilesize).toInt()}, ${
                 floor(sender.player.y / Vars.tilesize).toInt()
             })"
         )
