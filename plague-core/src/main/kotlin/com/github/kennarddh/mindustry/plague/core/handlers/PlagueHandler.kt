@@ -538,13 +538,21 @@ class PlagueHandler : Handler {
 
             val closestEnemyCoreInRange = getClosestEnemyCore(
                 Team.derelict,
-                event.tile.x.toFloat() * Vars.tilesize,
                 event.tile.y.toFloat() * Vars.tilesize,
-                50f * Vars.tilesize
+                event.tile.x.toFloat() * Vars.tilesize,
+                70f * Vars.tilesize
             )
 
             if (closestEnemyCoreInRange != null) {
                 // Join closest survivor core team
+                val distanceToClosestEnemyCoreInRange = closestEnemyCoreInRange.dst(
+                    event.tile.y.toFloat() * Vars.tilesize,
+                    event.tile.x.toFloat() * Vars.tilesize
+                )
+
+                if (distanceToClosestEnemyCoreInRange < 50)
+                    return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]New core must be at least 50 tiles from other core in the same team.")
+
                 if (teamsPlayersUUIDBlacklist[closestEnemyCoreInRange.team]?.contains(event.builder.player.uuid()) == true)
                     return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]You are blacklisted from joining the team '${closestEnemyCoreInRange.team.name}' because you were kicked by the team owner.")
 
