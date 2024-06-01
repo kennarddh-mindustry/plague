@@ -210,6 +210,8 @@ class PlagueHandler : Handler {
 
         if (state == PlagueState.Gameover) return
 
+        if (state == PlagueState.Prepare) return
+
         if (survivorTeamsData.isNotEmpty()) return
 
         if (state == PlagueState.Ended) {
