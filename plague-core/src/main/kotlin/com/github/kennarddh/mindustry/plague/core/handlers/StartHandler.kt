@@ -1,6 +1,5 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
-import arc.Core
 import arc.Events
 import arc.util.Reflect
 import arc.util.Timer
@@ -52,12 +51,11 @@ class StartHandler : Handler {
 
             ServerControl.instance.lastMode = gameMode
 
-            Core.settings.put("lastServerMode", ServerControl.instance.lastMode.name)
-            Vars.world.loadMap(map, map.applyRules(ServerControl.instance.lastMode))
+            Vars.world.loadMap(map)
 
             PlagueRules.removeUnitsWeapons()
 
-            Vars.state.rules = PlagueRules.initRules(Vars.state.rules)
+            Vars.state.rules = PlagueRules.initRules(Vars.state.map.rules())
 
             Vars.logic.play()
 

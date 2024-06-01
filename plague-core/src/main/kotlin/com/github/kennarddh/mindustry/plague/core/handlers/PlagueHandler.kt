@@ -772,7 +772,6 @@ class PlagueHandler : Handler {
                 """.trimIndent()
             )
 
-            Vars.state.gameOver = true
             Call.updateGameOver(winner)
 
             Logger.info("Selected next map to be '${map.plainName()}'.")
@@ -793,10 +792,9 @@ class PlagueHandler : Handler {
 
                 reloader.begin()
 
-                Vars.world.loadMap(map, map.applyRules(ServerControl.instance.lastMode))
+                Vars.world.loadMap(map)
 
-                Vars.state.rules = Vars.state.map.applyRules(ServerControl.instance.lastMode)
-                Vars.state.rules = PlagueRules.initRules(Vars.state.rules)
+                Vars.state.rules = PlagueRules.initRules(Vars.state.map.rules())
 
                 Vars.logic.play()
 
