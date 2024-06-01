@@ -749,6 +749,7 @@ class PlagueHandler : Handler {
 
         survivorTeamsData.clear()
         teamsPlayersUUIDBlacklist.clear()
+        lastMinuteUpdatesInMapTimeMinute = -1
 
         val roundExtraTimeDuration = Config.roundExtraTime.num().seconds
 
