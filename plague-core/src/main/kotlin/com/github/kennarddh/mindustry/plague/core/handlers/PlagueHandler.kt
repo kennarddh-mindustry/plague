@@ -114,15 +114,15 @@ class PlagueHandler : Handler {
 
     @Filter(FilterType.Action, Priority.High)
     fun payloadActionFilter(action: Administration.PlayerAction): Boolean {
-        if (action.type == Administration.ActionType.dropPayload) return false
-        if (action.type == Administration.ActionType.pickupBlock) return false
+        if (action.type == ActionType.dropPayload) return false
+        if (action.type == ActionType.pickupBlock) return false
 
         return true
     }
 
     @Filter(FilterType.Action, Priority.High)
     fun powerSourceActionFilter(action: Administration.PlayerAction): Boolean {
-        if (action.type != Administration.ActionType.breakBlock) return true
+        if (action.type != ActionType.breakBlock) return true
 
         if (action.block != Blocks.powerSource) return true
 
@@ -154,7 +154,7 @@ class PlagueHandler : Handler {
 
     @Filter(FilterType.Action, Priority.High)
     fun respawnActionFilter(action: Administration.PlayerAction): Boolean {
-        if (action.type != Administration.ActionType.respawn) return true
+        if (action.type != ActionType.respawn) return true
 
         if (action.player.team() == Team.blue) return false
 
@@ -210,7 +210,7 @@ class PlagueHandler : Handler {
 
         if (state == PlagueState.Gameover) return
 
-        if (survivorTeamsData.size != 0) return
+        if (survivorTeamsData.isNotEmpty()) return
 
         if (state == PlagueState.Ended) {
             Call.infoMessage("[green]All survivors have been destroyed.")
