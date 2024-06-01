@@ -811,7 +811,16 @@ class PlagueHandler : Handler {
 
     suspend fun setupPlayer(player: Player) {
         if (player.team() == Team.blue) {
-            val randomPlagueCore = Team.malis.cores().random()
+            val sortedPlagueCores = Team.malis.cores().toList().sortedByDescending {
+                when (it.block.name) {
+                    "core-shard" -> 1
+                    "core-foundation" -> 2
+                    "core-nucleus" -> 3
+                    else -> 1
+                }
+            }
+
+            val randomPlagueCore = sortedPlagueCores.random()
 
             CoreBlock.playerSpawn(randomPlagueCore.tile, player)
         }
