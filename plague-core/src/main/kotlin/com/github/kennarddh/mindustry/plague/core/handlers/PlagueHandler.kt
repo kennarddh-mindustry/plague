@@ -844,15 +844,6 @@ class PlagueHandler : Handler {
     }
 
     @EventHandler
-    fun onPlayerJoin(event: EventType.PlayerJoin) {
-        runOnMindustryThread {
-            runBlocking {
-                setupPlayer(event.player)
-            }
-        }
-    }
-
-    @EventHandler
     fun onPlayerConnectionConfirmed(event: EventType.PlayerConnectionConfirmed) {
         if (!event.player.dead()) return
 
