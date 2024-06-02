@@ -885,10 +885,6 @@ class PlagueHandler : Handler {
         runOnMindustryThread {
             Vars.state.rules.enemyCoreBuildRadius = Vars.state.map.rules().enemyCoreBuildRadius
 
-            runBlocking {
-                updateAllPlayerSpecificRules()
-            }
-
             if (!Vars.state.teams.active.any { isValidSurvivorTeam(it.team) }) {
                 // No survivors
                 Call.infoMessage("No survivors.")
@@ -907,6 +903,10 @@ class PlagueHandler : Handler {
 
                     it.unit().kill()
                 }
+            }
+
+            runBlocking {
+                updateAllPlayerSpecificRules()
             }
         }
     }
