@@ -72,6 +72,30 @@ class PlagueHandler : Handler {
 
     private var lastMinuteUpdatesInMapTimeMinute: Long = -1
 
+    override suspend fun onInit() {
+        Genesis.commandRegistry.removeCommand("sync")
+        Genesis.commandRegistry.removeCommand("gameover", CommandSide.Server)
+
+        runOnMindustryThread {
+            Vars.netServer.assigner = NetServer.TeamAssigner { player, _ ->
+                val lastSurvivorTeamData =
+                    survivorTeamsData.entries.find { it.value.playersUUID.contains(player.uuid()) }
+
+                if (lastSurvivorTeamData != null) {
+                    return@TeamAssigner lastSurvivorTeamData.key
+                }
+
+                runBlocking {
+                    PlagueVars.stateLock.withLock {
+                        if (PlagueVars.state == PlagueState.Prepare) return@runBlocking Team.blue
+                    }
+
+                    Team.malis
+                }
+            }
+        }
+    }
+
     @Filter(FilterType.Action, Priority.Important)
     fun loggingActionFilter(action: Administration.PlayerAction): Boolean {
         if (action.type == ActionType.command)
@@ -850,30 +874,6 @@ class PlagueHandler : Handler {
                 Plague Unit Multiplier: ${getPlagueUnitMultiplier()}
                 """.trimIndent()
             )
-        }
-    }
-
-    override suspend fun onInit() {
-        Genesis.commandRegistry.removeCommand("sync")
-        Genesis.commandRegistry.removeCommand("gameover", CommandSide.Server)
-
-        runOnMindustryThread {
-            Vars.netServer.assigner = NetServer.TeamAssigner { player, _ ->
-                val lastSurvivorTeamData =
-                    survivorTeamsData.entries.find { it.value.playersUUID.contains(player.uuid()) }
-
-                if (lastSurvivorTeamData != null) {
-                    return@TeamAssigner lastSurvivorTeamData.key
-                }
-
-                runBlocking {
-                    PlagueVars.stateLock.withLock {
-                        if (PlagueVars.state == PlagueState.Prepare) return@runBlocking Team.blue
-                    }
-
-                    Team.malis
-                }
-            }
         }
     }
 
