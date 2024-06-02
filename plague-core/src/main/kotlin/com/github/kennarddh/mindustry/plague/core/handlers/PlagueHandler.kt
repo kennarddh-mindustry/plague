@@ -96,23 +96,6 @@ class PlagueHandler : Handler {
         }
     }
 
-    @Filter(FilterType.Action, Priority.Important)
-    fun loggingActionFilter(action: Administration.PlayerAction): Boolean {
-        if (action.type == ActionType.command)
-            Logger.info("Action command ${action.player} ${action.player.team()}")
-
-        if (action.type == ActionType.commandUnits)
-            Logger.info("Action command units ${action.player} ${action.player.team()}")
-
-        if (action.type == ActionType.commandBuilding)
-            Logger.info("Action command buildings ${action.player} ${action.player.team()}")
-
-        if (action.type == ActionType.control)
-            Logger.info("Action control ${action.player} ${action.player.team()}")
-
-        return true
-    }
-
     @Filter(FilterType.Action, Priority.High)
     fun payloadActionFilter(action: Administration.PlayerAction): Boolean {
         if (action.type == ActionType.dropPayload) return false
