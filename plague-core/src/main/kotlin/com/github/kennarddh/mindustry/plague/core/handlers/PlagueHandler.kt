@@ -870,8 +870,8 @@ class PlagueHandler : Handler {
                 """
                 State: ${PlagueVars.state.displayName}
                 Map Time: ${PlagueVars.mapTime.toDisplayString()}
-                Map Skip Duration: ${PlagueVars.totalMapSkipDuration.toDisplayString()}x
-                Plague Unit Multiplier: ${getPlagueUnitMultiplier()}
+                Map Skip Duration: ${PlagueVars.totalMapSkipDuration.toDisplayString()}
+                Plague Unit Multiplier: ${getPlagueUnitMultiplier()}x
                 """.trimIndent()
             )
         }
