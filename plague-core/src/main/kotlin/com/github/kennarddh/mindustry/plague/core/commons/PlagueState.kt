@@ -5,5 +5,5 @@ enum class PlagueState(val displayName: String) {
     PlayingFirstPhase("Playing First Phase"),
     PlayingSecondPhase("Playing Second Phase"),
     Ended("Ended"),
-    Gameover("Gameover")
+    GameOver("Game over")
 }

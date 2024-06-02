@@ -209,7 +209,7 @@ class PlagueHandler : Handler {
     suspend fun onSurvivorTeamDestroyed() {
         val state = PlagueVars.stateLock.withLock { PlagueVars.state }
 
-        if (state == PlagueState.Gameover) return
+        if (state == PlagueState.GameOver) return
 
         if (state == PlagueState.Prepare) return
 
@@ -746,9 +746,9 @@ class PlagueHandler : Handler {
 
     suspend fun restart(winner: Team) {
         PlagueVars.stateLock.withLock {
-            if (PlagueVars.state == PlagueState.Gameover) return
+            if (PlagueVars.state == PlagueState.GameOver) return
 
-            PlagueVars.state = PlagueState.Gameover
+            PlagueVars.state = PlagueState.GameOver
         }
 
         survivorTeamsData.clear()

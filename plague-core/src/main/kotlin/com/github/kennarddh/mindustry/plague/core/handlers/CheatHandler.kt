@@ -54,7 +54,7 @@ class CheatHandler : Handler {
 
     @Command(["gameover"])
     @Admin
-    suspend fun gameover(sender: CommandSender, winner: Team = Team.derelict) {
+    suspend fun gameOver(sender: CommandSender, winner: Team = Team.derelict) {
         Genesis.getHandler<PlagueHandler>()?.restart(winner)
     }
 }
