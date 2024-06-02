@@ -22,7 +22,9 @@ class StartHandler : Handler {
     override suspend fun onInit() {
         Genesis.commandRegistry.removeCommand("host")
         Genesis.commandRegistry.removeCommand("load")
-        
+
+        PlagueRules.removeUnitsWeapons()
+
         // @EventHandler Annotation doesn't always work when the EventType is ServerLoadEvent
         Events.on(EventType.ServerLoadEvent::class.java) { _ ->
             Logger.info("Server load... Will host in 1 second.")
@@ -56,8 +58,6 @@ class StartHandler : Handler {
             ServerControl.instance.lastMode = gameMode
 
             Vars.world.loadMap(map)
-
-            PlagueRules.removeUnitsWeapons()
 
             Vars.state.rules = PlagueRules.initRules(Vars.state.map.rules())
 
