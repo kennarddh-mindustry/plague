@@ -35,10 +35,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import mindustry.Vars
 import mindustry.content.Blocks
-import mindustry.content.Items
 import mindustry.content.UnitTypes
 import mindustry.core.GameState
 import mindustry.core.NetServer
@@ -55,7 +53,6 @@ import mindustry.net.Administration.ActionType
 import mindustry.net.Administration.Config
 import mindustry.net.Packets.KickReason
 import mindustry.server.ServerControl
-import mindustry.type.ItemStack
 import mindustry.type.UnitType
 import mindustry.world.Block
 import mindustry.world.Tile
@@ -74,28 +71,11 @@ import kotlin.time.Duration.Companion.seconds
 
 
 class PlagueHandler : Handler {
-    private val monoReward = listOf(ItemStack(Items.copper, 300), ItemStack(Items.lead, 300))
-    private val newCoreCost = listOf(ItemStack(Items.thorium, 1000))
-
     private val survivorTeamsData: MutableMap<Team, SurvivorTeamData> = ConcurrentHashMap()
 
     private val teamsPlayersUUIDBlacklist: MutableMap<Team, MutableSet<String>> = ConcurrentHashMap()
 
-    private lateinit var mapStartTime: Instant
-    private var totalMapSkipDuration: Duration = 0.seconds
-
     private var lastMinuteUpdatesInMapTimeMinute: Long = -1
-
-    private val playersWithDisabledHUD = Collections.synchronizedSet(mutableSetOf<Player>())
-
-    private val mapTime: Duration
-        get() {
-            if (::mapStartTime.isInitialized)
-                return Clock.System.now() - mapStartTime + totalMapSkipDuration
-
-            return totalMapSkipDuration
-        }
-
 
     @Filter(FilterType.Action, Priority.Important)
     fun loggingActionFilter(action: Administration.PlayerAction): Boolean {
@@ -622,30 +602,30 @@ class PlagueHandler : Handler {
 
     @Command(["hud"])
     fun toggleHUD(sender: PlayerCommandSender) {
-        val wasDisabled = playersWithDisabledHUD.contains(sender.player)
+        val wasDisabled = PlagueVars.playersWithDisabledHUD.contains(sender.player)
 
         if (wasDisabled) {
-            playersWithDisabledHUD.remove(sender.player)
+            PlagueVars.playersWithDisabledHUD.remove(sender.player)
         } else {
-            playersWithDisabledHUD.add(sender.player)
+            PlagueVars.playersWithDisabledHUD.add(sender.player)
         }
 
         sender.sendSuccess("HUD will be ${if (wasDisabled) "shown" else "hidden"} in a moment.")
     }
 
     private suspend fun updatePlayerHUD(player: Player) {
-        if (playersWithDisabledHUD.contains(player)) return
+        if (PlagueVars.playersWithDisabledHUD.contains(player)) return
 
         val state = PlagueVars.stateLock.withLock { PlagueVars.state }
 
-        val durationToNextInfo = (mapTime.inWholeMinutes + 1).minutes - mapTime
+        val durationToNextInfo = (PlagueVars.mapTime.inWholeMinutes + 1).minutes - PlagueVars.mapTime
 
         player.infoPopup(
             """
             State: ${state.displayName}
-            Map Time: ${mapTime.toMinutesDisplayString()}
+            Map Time: ${PlagueVars.mapTime.toMinutesDisplayString()}
             Plague Unit Multiplier: ${round(getPlagueUnitMultiplier()).toInt()}x
-            ${if (totalMapSkipDuration == Duration.ZERO) "" else "Map Skip Duration: ${totalMapSkipDuration.toDisplayString()}"}
+            ${if (PlagueVars.totalMapSkipDuration == Duration.ZERO) "" else "Map Skip Duration: ${PlagueVars.totalMapSkipDuration.toDisplayString()}"}
             
             Run [accent]/hud[white] to toggle this.
             Run [accent]/state[white] for more detailed data.
@@ -673,8 +653,8 @@ class PlagueHandler : Handler {
                 it.health = Float.MAX_VALUE
             }
 
-            if (lastMinuteUpdatesInMapTimeMinute != mapTime.inWholeMinutes) {
-                lastMinuteUpdatesInMapTimeMinute = mapTime.inWholeMinutes
+            if (lastMinuteUpdatesInMapTimeMinute != PlagueVars.mapTime.inWholeMinutes) {
+                lastMinuteUpdatesInMapTimeMinute = PlagueVars.mapTime.inWholeMinutes
 
                 val plagueUnitMultiplier = getPlagueUnitMultiplier()
 
@@ -698,11 +678,11 @@ class PlagueHandler : Handler {
 
         // Like this to prevent locking state deadlock
         PlagueVars.stateLock.withLock {
-            if (PlagueVars.state == PlagueState.Prepare && mapTime >= 2.minutes) {
+            if (PlagueVars.state == PlagueState.Prepare && PlagueVars.mapTime >= 2.minutes) {
                 CoroutineScopes.Main.launch { onFirstPhase() }
-            } else if (PlagueVars.state == PlagueState.PlayingFirstPhase && mapTime >= 47.minutes) {
+            } else if (PlagueVars.state == PlagueState.PlayingFirstPhase && PlagueVars.mapTime >= 47.minutes) {
                 CoroutineScopes.Main.launch { onSecondPhase() }
-            } else if (PlagueVars.state == PlagueState.PlayingSecondPhase && mapTime >= 62.minutes) {
+            } else if (PlagueVars.state == PlagueState.PlayingSecondPhase && PlagueVars.mapTime >= 62.minutes) {
                 CoroutineScopes.Main.launch { onEnded() }
             } else {
                 // Empty else because this 'if' is seen as an expression
@@ -716,8 +696,8 @@ class PlagueHandler : Handler {
             PlagueVars.state = PlagueState.Prepare
         }
 
-        totalMapSkipDuration = 0.seconds
-        mapStartTime = Clock.System.now()
+        PlagueVars.totalMapSkipDuration = 0.seconds
+        PlagueVars.mapStartTime = Clock.System.now()
 
         runOnMindustryThread {
             Team.malis.core()?.items()?.clear()
@@ -726,7 +706,7 @@ class PlagueHandler : Handler {
 
     @EventHandler
     fun onPlayerLeave(event: EventType.PlayerLeave) {
-        playersWithDisabledHUD.remove(event.player)
+        PlagueVars.playersWithDisabledHUD.remove(event.player)
 
         val teamOwned = survivorTeamsData.entries.find { it.value.ownerUUID == event.player.uuid() }
 
@@ -836,7 +816,7 @@ class PlagueHandler : Handler {
     }
 
     fun getPlagueUnitMultiplier(): Float {
-        val mapTimeInMinutes = max(1, mapTime.inWholeMinutes.toInt())
+        val mapTimeInMinutes = max(1, PlagueVars.mapTime.inWholeMinutes.toInt())
 
         if (mapTimeInMinutes < 40)
             return 1.2f.pow(mapTimeInMinutes / 10f)
@@ -870,8 +850,8 @@ class PlagueHandler : Handler {
             sender.sendSuccess(
                 """
                 State: ${PlagueVars.state.displayName}
-                Map Time: ${mapTime.toDisplayString()}
-                Map Skip Duration: ${totalMapSkipDuration.toDisplayString()}x
+                Map Time: ${PlagueVars.mapTime.toDisplayString()}
+                Map Skip Duration: ${PlagueVars.totalMapSkipDuration.toDisplayString()}x
                 Plague Unit Multiplier: ${getPlagueUnitMultiplier()}
                 """.trimIndent()
             )
@@ -881,9 +861,9 @@ class PlagueHandler : Handler {
     @Command(["skiptime"])
     @Admin
     fun skipTime(sender: CommandSender, duration: Duration) {
-        totalMapSkipDuration += duration
+        PlagueVars.totalMapSkipDuration += duration
 
-        sender.sendSuccess("Skipped '${duration.toDisplayString()}'. Current map time is '${mapTime.toDisplayString()}'.")
+        sender.sendSuccess("Skipped '${duration.toDisplayString()}'. Current map time is '${PlagueVars.mapTime.toDisplayString()}'.")
     }
 
     @Command(["spawnunit"])
@@ -1030,12 +1010,12 @@ class PlagueHandler : Handler {
         val vault = event.tile.build as StorageBuild
 
         runOnMindustryThread {
-            val enoughResources = newCoreCost.all { vault.items().get(it.item) >= it.amount }
+            val enoughResources = PlagueVars.newCoreCost.all { vault.items().get(it.item) >= it.amount }
 
             if (!enoughResources)
                 return@runOnMindustryThread event.player.sendMessage("[scarlet]Not enough resources to convert vault to core.")
 
-            newCoreCost.forEach {
+            PlagueVars.newCoreCost.forEach {
                 vault.items().remove(it)
             }
 
@@ -1070,7 +1050,7 @@ class PlagueHandler : Handler {
             event.unit.health = 0f
             event.unit.dead = true
 
-            event.unit.team.core().items().add(monoReward)
+            event.unit.team.core().items().add(PlagueVars.monoReward)
         }
     }
 }
