@@ -695,13 +695,13 @@ class PlagueHandler : Handler {
             }
         }
 
-        // Like this to prevent locking state deadlock
+        // Like this to prevent locking state deadlock and also prevent locking mindustry thread
         PlagueVars.stateLock.withLock {
-            if (PlagueVars.state == PlagueState.Prepare && PlagueVars.mapTime >= 2.minutes) {
+            if (PlagueVars.state == PlagueState.Prepare && PlagueVars.mapTime >= PlagueVars.state.startTime) {
                 CoroutineScopes.Main.launch { onFirstPhase() }
-            } else if (PlagueVars.state == PlagueState.PlayingFirstPhase && PlagueVars.mapTime >= 47.minutes) {
+            } else if (PlagueVars.state == PlagueState.PlayingFirstPhase && PlagueVars.mapTime >= PlagueVars.state.startTime) {
                 CoroutineScopes.Main.launch { onSecondPhase() }
-            } else if (PlagueVars.state == PlagueState.PlayingSecondPhase && PlagueVars.mapTime >= 62.minutes) {
+            } else if (PlagueVars.state == PlagueState.PlayingSecondPhase && PlagueVars.mapTime >= PlagueVars.state.startTime) {
                 CoroutineScopes.Main.launch { onEnded() }
             } else {
                 // Empty else because this 'if' is seen as an expression
