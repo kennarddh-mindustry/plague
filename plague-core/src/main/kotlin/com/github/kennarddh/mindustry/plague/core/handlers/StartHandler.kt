@@ -3,6 +3,7 @@ package com.github.kennarddh.mindustry.plague.core.handlers
 import arc.Events
 import arc.util.Reflect
 import arc.util.Timer
+import com.github.kennarddh.mindustry.genesis.core.Genesis
 import com.github.kennarddh.mindustry.genesis.core.commons.runOnMindustryThread
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.plague.core.commons.Logger
@@ -19,6 +20,9 @@ import kotlin.time.Duration.Companion.seconds
 
 class StartHandler : Handler {
     override suspend fun onInit() {
+        Genesis.commandRegistry.removeCommand("host")
+        Genesis.commandRegistry.removeCommand("load")
+        
         // @EventHandler Annotation doesn't always work when the EventType is ServerLoadEvent
         Events.on(EventType.ServerLoadEvent::class.java) { _ ->
             Logger.info("Server load... Will host in 1 second.")
