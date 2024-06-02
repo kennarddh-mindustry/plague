@@ -5,10 +5,7 @@ import com.github.kennarddh.mindustry.genesis.core.commons.AbstractPlugin
 import com.github.kennarddh.mindustry.plague.core.commands.validations.Admin
 import com.github.kennarddh.mindustry.plague.core.commands.validations.validateAdmin
 import com.github.kennarddh.mindustry.plague.core.commons.Logger
-import com.github.kennarddh.mindustry.plague.core.handlers.PlagueHandler
-import com.github.kennarddh.mindustry.plague.core.handlers.ServerPresenceHandler
-import com.github.kennarddh.mindustry.plague.core.handlers.StartHandler
-import com.github.kennarddh.mindustry.plague.core.handlers.WelcomeHandler
+import com.github.kennarddh.mindustry.plague.core.handlers.*
 
 @Suppress("unused")
 class Plague : AbstractPlugin() {
@@ -18,6 +15,8 @@ class Plague : AbstractPlugin() {
         Genesis.commandRegistry.registerCommandValidationAnnotation(Admin::class, ::validateAdmin)
 
         Genesis.registerHandler(PlagueHandler())
+
+        Genesis.registerHandler(CheatHandler())
 
         Genesis.registerHandler(StartHandler())
 
