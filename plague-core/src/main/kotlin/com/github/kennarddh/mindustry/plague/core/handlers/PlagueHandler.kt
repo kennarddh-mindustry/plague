@@ -241,6 +241,7 @@ class PlagueHandler : Handler {
     }
 
     @Command(["plague"])
+    @Description("Change team to plague")
     fun plague(sender: PlayerCommandSender) {
         if (sender.player.team() == Team.malis)
             return sender.sendError("You are already in plague team.")
@@ -259,6 +260,7 @@ class PlagueHandler : Handler {
     }
 
     @Command(["teamleave"])
+    @Description("Leave your current team.")
     suspend fun teamLeave(sender: PlayerCommandSender) {
         if (sender.player.team() == Team.blue)
             return sender.sendError("You are not in any team.")
@@ -293,6 +295,7 @@ class PlagueHandler : Handler {
     }
 
     @Command(["teamkick"])
+    @Description("Kick someone from your team. Only for survivor team's owner.")
     suspend fun teamKick(sender: PlayerCommandSender, @Vararg target: Player) {
         if (sender.player.team() == Team.malis)
             return sender.sendError("You cannot kick in plague team.")
@@ -345,6 +348,7 @@ class PlagueHandler : Handler {
     }
 
     @Command(["teamtransferownership"])
+    @Description("Transfer team's ownership to someone in your team. Only for survivor team's owner.")
     fun teamTransferOwnership(sender: PlayerCommandSender, @Vararg target: Player) {
         if (sender.player.team() == Team.malis)
             return sender.sendError("You cannot transfer ownership in plague team.")
@@ -373,6 +377,7 @@ class PlagueHandler : Handler {
     }
 
     @Command(["teamlock"])
+    @Description("Prevent new player from joining your team. Only for survivor team's owner.")
     fun teamLock(sender: PlayerCommandSender) {
         if (sender.player.team() == Team.malis)
             return sender.sendError("You cannot lock plague team.")
@@ -594,6 +599,7 @@ class PlagueHandler : Handler {
     }
 
     @Command(["hud"])
+    @Description("Toggle HUD.")
     fun toggleHUD(sender: PlayerCommandSender) {
         val wasDisabled = PlagueVars.playersWithDisabledHUD.contains(sender.player)
 
@@ -847,6 +853,7 @@ class PlagueHandler : Handler {
     }
 
     @Command(["state"])
+    @Description("Get detailed game state/data.")
     suspend fun getState(sender: CommandSender) {
         PlagueVars.stateLock.withLock {
             sender.sendSuccess(

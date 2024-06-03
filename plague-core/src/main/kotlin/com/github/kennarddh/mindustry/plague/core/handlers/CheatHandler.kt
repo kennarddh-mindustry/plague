@@ -2,6 +2,7 @@ package com.github.kennarddh.mindustry.plague.core.handlers
 
 import com.github.kennarddh.mindustry.genesis.core.Genesis
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Command
+import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Description
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.CommandSender
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.PlayerCommandSender
 import com.github.kennarddh.mindustry.genesis.core.commons.runOnMindustryThread
@@ -20,6 +21,7 @@ import kotlin.time.Duration
 class CheatHandler : Handler {
     @Command(["skiptime"])
     @Admin
+    @Description("Skip map time. Only for admin.")
     fun skipTime(sender: CommandSender, duration: Duration) {
         PlagueVars.totalMapSkipDuration += duration
 
@@ -28,6 +30,7 @@ class CheatHandler : Handler {
 
     @Command(["spawnunit"])
     @Admin
+    @Description("Spawn unit. Only for admin.")
     fun spawnUnit(
         sender: PlayerCommandSender,
         unitType: UnitType,
@@ -54,6 +57,7 @@ class CheatHandler : Handler {
 
     @Command(["gameover"])
     @Admin
+    @Description("Restart game. Only for admin.")
     suspend fun gameOver(sender: CommandSender, winner: Team = Team.derelict) {
         Genesis.getHandler<PlagueHandler>()?.restart(winner)
     }
