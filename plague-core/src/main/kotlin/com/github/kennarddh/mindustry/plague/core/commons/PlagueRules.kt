@@ -1,6 +1,7 @@
 package com.github.kennarddh.mindustry.plague.core.commons
 
 import arc.struct.Seq
+import com.github.kennarddh.mindustry.plague.core.handlers.PlagueHandler
 import mindustry.Vars
 import mindustry.content.UnitTypes
 import mindustry.game.Rules
@@ -14,7 +15,7 @@ object PlagueRules {
         rules.hideBannedBlocks = true
         rules.enemyCoreBuildRadius = 50f
 
-        Team.all.filter { it != Team.malis }.forEach {
+        Team.all.filter { PlagueHandler.isValidSurvivorTeam(it) }.forEach {
             rules.teams[it].unitCrashDamageMultiplier = 0f
         }
 

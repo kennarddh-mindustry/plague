@@ -72,6 +72,11 @@ class PlagueHandler : Handler {
 
     private var lastMinuteUpdatesInMapTimeMinute: Long = -1
 
+
+    companion object {
+        fun isValidSurvivorTeam(team: Team) = team.id > 6
+    }
+
     override suspend fun onInit() {
         Genesis.commandRegistry.removeCommand("sync")
         Genesis.commandRegistry.removeCommand("gameover", CommandSide.Server)
@@ -269,7 +274,7 @@ class PlagueHandler : Handler {
             if (PlagueVars.state == PlagueState.Prepare) {
                 runOnMindustryThread {
                     runBlocking {
-                        if (sender.player.team() != Team.malis)
+                        if (isValidSurvivorTeam(sender.player.team()))
                             leaveSurvivorTeam(sender.player)
 
                         changePlayerTeam(sender.player, Team.blue)
@@ -401,8 +406,6 @@ class PlagueHandler : Handler {
                     it.sendMessage("[green]This team is now unlocked by the owner.")
             }
     }
-
-    fun isValidSurvivorTeam(team: Team) = team.id > 6
 
     fun getNewEmptySurvivorTeam(): Team? {
         return Team.all.find {
