@@ -647,6 +647,15 @@ class PlagueHandler : Handler {
                 it.health = Float.MAX_VALUE
             }
 
+            // Make sure power source cannot be destroyed and cannot be disabled
+            Groups.build.forEach {
+                if (it.block.name == "power-source") {
+                    it.health = Float.MAX_VALUE
+                    
+                    it.enabled(true)
+                }
+            }
+
             // Make sure blue team units cannot be killed
             Groups.unit.forEach {
                 if (it.team != Team.blue) return@forEach
