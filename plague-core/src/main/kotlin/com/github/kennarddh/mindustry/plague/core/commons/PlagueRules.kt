@@ -12,7 +12,7 @@ object PlagueRules {
 
         rules.canGameOver = false
         rules.hideBannedBlocks = true
-        rules.enemyCoreBuildRadius = 0f
+        rules.enemyCoreBuildRadius = 50f
 
         Team.all.filter { it != Team.malis }.forEach {
             rules.teams[it].unitCrashDamageMultiplier = 0f
