@@ -72,7 +72,6 @@ class PlagueHandler : Handler {
 
     private var lastMinuteUpdatesInMapTimeMinute: Long = -1
 
-
     companion object {
         fun isValidSurvivorTeam(team: Team) = team.id > 6
     }
