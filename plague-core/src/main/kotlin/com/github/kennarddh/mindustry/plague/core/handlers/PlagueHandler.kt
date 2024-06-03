@@ -996,7 +996,11 @@ class PlagueHandler : Handler {
             event.unit.health = 0f
             event.unit.dead = true
 
-            event.unit.team.core().items().add(PlagueVars.monoReward)
+            PlagueVars.monoReward.forEach {
+                val availableSpace = event.unit.team.core().storageCapacity - event.unit.team.items().get(it.item)
+
+                event.unit.team.items().add(it.item, it.amount.coerceAtMost(availableSpace))
+            }
         }
     }
 
