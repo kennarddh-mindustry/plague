@@ -97,20 +97,12 @@ class PlagueHandler : Handler {
     }
 
     @Filter(FilterType.Action, Priority.High)
-    fun payloadActionFilter(action: Administration.PlayerAction): Boolean {
-        if (action.type == ActionType.dropPayload) return false
-        if (action.type == ActionType.pickupBlock) return false
+    fun powerSourceActionFilter(action: Administration.PlayerAction): Boolean {
+        if (action.type == ActionType.breakBlock || action.type == ActionType.pickupBlock) {
+            if (action.block == Blocks.powerSource) return false
+        }
 
         return true
-    }
-
-    @Filter(FilterType.Action, Priority.High)
-    fun powerSourceActionFilter(action: Administration.PlayerAction): Boolean {
-        if (action.type != ActionType.breakBlock) return true
-
-        if (action.block != Blocks.powerSource) return true
-
-        return false
     }
 
     @Filter(FilterType.Action, Priority.High)
