@@ -442,17 +442,22 @@ class PlagueHandler : Handler {
         return true
     }
 
-    fun getClosestEnemyCore(team: Team, x: Float, y: Float, maxDistance: Float = Float.MAX_VALUE): CoreBuild? {
+    fun getClosestEnemyCore(
+        x: Float,
+        y: Float,
+        distanceRange: ClosedFloatingPointRange<Float> = 0f..Float.MAX_VALUE,
+        ignoredTeams: List<Team> = listOf(),
+    ): DistanceData<CoreBuild?> {
         var closest: CoreBuild? = null
         var closestDistance = Float.MAX_VALUE
 
         for (activeTeam in Vars.state.teams.active) {
-            if (activeTeam == team) continue
+            if (ignoredTeams.contains(activeTeam.team)) continue
 
             for (core in activeTeam.cores) {
                 val distance = Mathf.dst(x, y, core.x, core.y)
 
-                if (distance > maxDistance) continue
+                if (distance !in distanceRange) continue
 
                 if (closestDistance > distance) {
                     closest = core
@@ -462,7 +467,7 @@ class PlagueHandler : Handler {
             }
         }
 
-        return closest
+        return DistanceData(closest, closestDistance)
     }
 
     @EventHandler
@@ -541,23 +546,17 @@ class PlagueHandler : Handler {
                     return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Core must be at least 100 tiles away from nearest plague's core.")
             }
 
-            val closestEnemyCoreInRange = getClosestEnemyCore(
-                Team.derelict,
+            val (closestEnemyCoreInRange, distanceToClosestEnemyCoreInRange) = getClosestEnemyCore(
                 event.tile.y.toFloat() * Vars.tilesize,
                 event.tile.x.toFloat() * Vars.tilesize,
-                70f * Vars.tilesize
+                0f..(70f * Vars.tilesize)
             )
+
+            if (distanceToClosestEnemyCoreInRange < 50 * Vars.tilesize)
+                return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Core must be at least 50 tiles away from nearest survivor's core.")
 
             if (closestEnemyCoreInRange != null) {
                 // Join closest survivor core team
-                val distanceToClosestEnemyCoreInRange = closestEnemyCoreInRange.dst(
-                    event.tile.y.toFloat() * Vars.tilesize,
-                    event.tile.x.toFloat() * Vars.tilesize
-                )
-
-                if (distanceToClosestEnemyCoreInRange < 50)
-                    return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]New core must be at least 50 tiles from other core in the same team.")
-
                 if (teamsPlayersUUIDBlacklist[closestEnemyCoreInRange.team]?.contains(event.builder.player.uuid()) == true)
                     return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]You are blacklisted from joining the team '${closestEnemyCoreInRange.team.name}' because you were kicked by the team owner.")
 
