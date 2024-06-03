@@ -651,7 +651,7 @@ class PlagueHandler : Handler {
             Groups.build.forEach {
                 if (it.block.name == "power-source") {
                     it.health = Float.MAX_VALUE
-                    
+
                     it.enabled(true)
                 }
             }
@@ -997,6 +997,43 @@ class PlagueHandler : Handler {
             event.unit.dead = true
 
             event.unit.team.core().items().add(PlagueVars.monoReward)
+        }
+    }
+
+    @EventHandler
+    suspend fun onUnitCreate(event: EventType.UnitCreateEvent) {
+        if (event.unit.team.core() == null) return
+
+        if (event.unit.team == Team.malis) {
+            if (PlagueBanned.getCurrentPlagueBannedUnits().contains(event.unit.type)) {
+                runOnMindustryThread {
+                    Call.label(
+                        "${event.unit.type.localizedName} is banned.",
+                        5f,
+                        event.spawner.x,
+                        event.spawner.y
+                    )
+
+                    // .kill() instantly kill the unit makes it weird because the unit just disappear
+                    event.unit.health = 0f
+                    event.unit.dead = true
+                }
+            }
+        } else if (isValidSurvivorTeam(event.unit.team)) {
+            if (PlagueBanned.getCurrentSurvivorsBannedUnits().contains(event.unit.type)) {
+                runOnMindustryThread {
+                    Call.label(
+                        "${event.unit.type.localizedName} is banned.",
+                        5f,
+                        event.spawner.x,
+                        event.spawner.y
+                    )
+
+                    // .kill() instantly kill the unit makes it weird because the unit just disappear
+                    event.unit.health = 0f
+                    event.unit.dead = true
+                }
+            }
         }
     }
 }
