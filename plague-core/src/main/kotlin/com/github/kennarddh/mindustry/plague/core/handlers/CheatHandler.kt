@@ -109,4 +109,25 @@ class CheatHandler : Handler {
             sender.sendSuccess("Added $addedAmount ${item.name} to team '${team.name}' core.")
         }
     }
+
+    @Command(["removeitem"])
+    @Admin
+    @Description("Remove an item to a team. Only for admin.")
+    fun removeItem(
+        sender: CommandSender,
+        item: Item,
+        @GTE(0) amount: Int,
+        team: Team = if (sender is PlayerCommandSender) sender.player.team() else Vars.state.map.rules().defaultTeam,
+    ) {
+        runOnMindustryThread {
+            if (Vars.state.teams.cores(team).isEmpty)
+                return@runOnMindustryThread sender.sendError("Team '${team.name}' doesn't have any cores.")
+
+            val removedAmount = amount.coerceAtMost(team.items().get(item))
+
+            team.items().remove(item, removedAmount)
+
+            sender.sendSuccess("Removed $removedAmount ${item.name} from team '${team.name}' core.")
+        }
+    }
 }
