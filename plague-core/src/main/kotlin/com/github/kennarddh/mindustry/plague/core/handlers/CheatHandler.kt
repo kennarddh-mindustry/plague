@@ -76,14 +76,16 @@ class CheatHandler : Handler {
         sender: CommandSender,
         team: Team = if (sender is PlayerCommandSender) sender.player.team() else Vars.state.map.rules().defaultTeam,
     ) {
-        if (Vars.state.teams.cores(team).isEmpty)
-            return sender.sendError("Team '${team.name}' doesn't have any cores.")
+        runOnMindustryThread {
+            if (Vars.state.teams.cores(team).isEmpty)
+                return@runOnMindustryThread sender.sendError("Team '${team.name}' doesn't have any cores.")
 
-        Vars.content.items().forEach {
-            team.items().set(it, Vars.state.teams.cores(team).first().storageCapacity)
+            Vars.content.items().forEach {
+                team.items().set(it, Vars.state.teams.cores(team).first().storageCapacity)
+            }
+
+            sender.sendSuccess("Team '${team.name}' core filled.")
         }
-
-        sender.sendSuccess("Team '${team.name}' core filled.")
     }
 
     @Command(["additem"])
@@ -95,14 +97,16 @@ class CheatHandler : Handler {
         @GTE(0) amount: Int,
         team: Team = if (sender is PlayerCommandSender) sender.player.team() else Vars.state.map.rules().defaultTeam,
     ) {
-        if (Vars.state.teams.cores(team).isEmpty)
-            return sender.sendError("Team '${team.name}' doesn't have any cores.")
+        runOnMindustryThread {
+            if (Vars.state.teams.cores(team).isEmpty)
+                return@runOnMindustryThread sender.sendError("Team '${team.name}' doesn't have any cores.")
 
-        val addedAmount =
-            amount.coerceAtMost(Vars.state.teams.cores(team).first().storageCapacity - team.items().get(item))
+            val addedAmount =
+                amount.coerceAtMost(Vars.state.teams.cores(team).first().storageCapacity - team.items().get(item))
 
-        team.items().add(item, addedAmount)
+            team.items().add(item, addedAmount)
 
-        sender.sendSuccess("Added $addedAmount ${item.name} to team '${team.name}' core.")
+            sender.sendSuccess("Added $addedAmount ${item.name} to team '${team.name}' core.")
+        }
     }
 }
