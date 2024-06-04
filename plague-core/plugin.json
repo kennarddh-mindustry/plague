@@ -6,7 +6,7 @@
   "minGameVersion": "146",
   "java": true,
   "main": "com.github.kennarddh.mindustry.plague.core.Plague",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "repo": "kennarddh-mindustry/plague",
   "dependencies": [
     "kotlin-runtime",
