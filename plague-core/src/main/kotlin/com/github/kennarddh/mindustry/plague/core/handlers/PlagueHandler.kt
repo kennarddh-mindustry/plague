@@ -275,6 +275,10 @@ class PlagueHandler : Handler {
                         if (isValidSurvivorTeam(sender.player.team()))
                             leaveSurvivorTeam(sender.player)
 
+                        val randomPlagueCore = getHigestRandomPlagueCore()
+
+                        CoreBlock.playerSpawn(randomPlagueCore!!.tile, sender.player)
+
                         changePlayerTeam(sender.player, Team.blue)
                     }
                 }
@@ -814,6 +818,19 @@ class PlagueHandler : Handler {
         }
     }
 
+    fun getHigestRandomPlagueCore(): CoreBuild? {
+        val sortedPlagueCores = Team.malis.cores().toList().sortedByDescending {
+            when (it.block.name) {
+                "core-shard" -> 1
+                "core-foundation" -> 2
+                "core-nucleus" -> 3
+                else -> 1
+            }
+        }
+
+        return sortedPlagueCores.random()
+    }
+
     suspend fun setupPlayer(player: Player) {
         if (player.team() == Team.blue) {
             val sortedPlagueCores = Team.malis.cores().toList().sortedByDescending {
@@ -825,9 +842,9 @@ class PlagueHandler : Handler {
                 }
             }
 
-            val randomPlagueCore = sortedPlagueCores.random()
+            val randomPlagueCore = getHigestRandomPlagueCore()
 
-            CoreBlock.playerSpawn(randomPlagueCore.tile, player)
+            CoreBlock.playerSpawn(randomPlagueCore!!.tile, player)
         }
 
         updatePlayerHUD(player)
