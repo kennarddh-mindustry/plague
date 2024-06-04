@@ -648,7 +648,7 @@ class PlagueHandler : Handler {
 
                 it.health = Float.MAX_VALUE
             }
-            
+
             if (lastMinuteUpdatesInMapTimeMinute != PlagueVars.mapTime.inWholeMinutes) {
                 lastMinuteUpdatesInMapTimeMinute = PlagueVars.mapTime.inWholeMinutes
 
