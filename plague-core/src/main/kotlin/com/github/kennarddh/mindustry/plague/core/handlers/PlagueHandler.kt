@@ -840,7 +840,6 @@ class PlagueHandler : Handler {
     suspend fun setupPlayer(player: Player) {
         if (player.team() == Team.blue) {
             val randomPlagueCore = getHigestRandomPlagueCore()
-            Logger.info("Random plague core: $randomPlagueCore")
 
             CoreBlock.playerSpawn(randomPlagueCore!!.tile, player)
         }
