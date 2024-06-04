@@ -648,7 +648,7 @@ class PlagueHandler : Handler {
 
                 it.health = Float.MAX_VALUE
             }
-
+            
             if (lastMinuteUpdatesInMapTimeMinute != PlagueVars.mapTime.inWholeMinutes) {
                 lastMinuteUpdatesInMapTimeMinute = PlagueVars.mapTime.inWholeMinutes
 
@@ -700,8 +700,6 @@ class PlagueHandler : Handler {
 
             // Make sure malis core cannot be destroyed
             Team.malis.cores().forEach {
-                Logger.info("${it.x} ${it.y}, ${it.block}")
-
                 it.health = Float.MAX_VALUE
             }
 
@@ -711,11 +709,7 @@ class PlagueHandler : Handler {
                 if (it.build.block != Blocks.powerSource) return@forEach
                 if (it.build.team != Team.malis) return@forEach
 
-                Logger.info("${it.x} ${it.y}, ${it.build.block}")
-
                 it.build.health = Float.MAX_VALUE
-
-                it.build.enabled(true)
             }
         }
     }
