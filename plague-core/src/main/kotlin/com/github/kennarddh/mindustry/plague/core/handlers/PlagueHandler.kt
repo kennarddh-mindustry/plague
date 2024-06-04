@@ -219,8 +219,7 @@ class PlagueHandler : Handler {
 
                 Call.sendMessage("[accent]All ${player.team().name} team players left. Team will be removed.")
 
-                teamData.units.forEach { it.kill() }
-                teamData.buildings.forEach { it.kill() }
+                clearTeam(player.team())
 
                 survivorTeamsData.remove(player.team())
 
@@ -469,6 +468,18 @@ class PlagueHandler : Handler {
         return DistanceData(closest, closestDistance)
     }
 
+    fun clearTeam(team: Team) {
+        val teamData = Vars.state.teams[team]
+
+        teamData.units.forEach { it.kill() }
+
+        Vars.world.tiles.forEach {
+            if (it.team() == team) {
+                it.build?.kill()
+            }
+        }
+    }
+
     @EventHandler
     suspend fun onCoreDestroyed(event: EventType.BlockDestroyEvent) {
         if (event.tile.build !is CoreBuild) return
@@ -483,6 +494,8 @@ class PlagueHandler : Handler {
         runOnMindustryThread {
             Call.sendMessage("[scarlet]'${coreBuild.team.name}' survivor team lost.")
 
+            clearTeam(coreBuild.team)
+
             runBlocking {
                 teamData.players.forEach {
                     changePlayerTeam(it, Team.malis)
@@ -492,9 +505,6 @@ class PlagueHandler : Handler {
                     Call.sendMessage("[scarlet]'${it.plainName()}' has been infected.")
                 }
             }
-
-            teamData.units.forEach { it.kill() }
-            teamData.buildings.forEach { it.kill() }
         }
 
         survivorTeamsData.remove(coreBuild.team)
