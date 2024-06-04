@@ -6,7 +6,6 @@ import arc.util.Reflect
 import arc.util.Time
 import arc.util.Timer
 import com.github.kennarddh.mindustry.genesis.core.Genesis
-import com.github.kennarddh.mindustry.genesis.core.commands.CommandSide
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Command
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Description
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.parameters.Vararg
@@ -78,7 +77,6 @@ class PlagueHandler : Handler {
 
     override suspend fun onInit() {
         Genesis.commandRegistry.removeCommand("sync")
-        Genesis.commandRegistry.removeCommand("gameover", CommandSide.Server)
 
         runOnMindustryThread {
             Vars.netServer.assigner = NetServer.TeamAssigner { player, _ ->
@@ -588,7 +586,7 @@ class PlagueHandler : Handler {
                 event.tile.setNet(Blocks.coreShard, closestEnemyCoreInRange.team, 0)
 
                 Vars.state.teams.registerCore(event.tile.build as CoreBuild)
-                
+
                 event.builder.player.unit().kill()
             } else {
                 // Create new team

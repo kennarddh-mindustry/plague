@@ -1,6 +1,7 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
 import com.github.kennarddh.mindustry.genesis.core.Genesis
+import com.github.kennarddh.mindustry.genesis.core.commands.CommandSide
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Command
 import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Description
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.CommandSender
@@ -19,6 +20,11 @@ import kotlin.math.floor
 import kotlin.time.Duration
 
 class CheatHandler : Handler {
+    override suspend fun onInit() {
+        Genesis.commandRegistry.removeCommand("gameover", CommandSide.Server)
+        Genesis.commandRegistry.removeCommand("fillitems", CommandSide.Server)
+    }
+
     @Command(["skiptime"])
     @Admin
     @Description("Skip map time. Only for admin.")
@@ -60,5 +66,22 @@ class CheatHandler : Handler {
     @Description("Restart game. Only for admin.")
     suspend fun gameOver(sender: CommandSender, winner: Team = Team.derelict) {
         Genesis.getHandler<PlagueHandler>()?.restart(winner)
+    }
+
+    @Command(["fillitems"])
+    @Admin
+    @Description("Fill the core with items. Only for admin.")
+    fun fillItems(
+        sender: CommandSender,
+        team: Team = if (sender is PlayerCommandSender) sender.player.team() else Vars.state.map.rules().defaultTeam,
+    ) {
+        if (Vars.state.teams.cores(team).isEmpty)
+            return sender.sendError("Team '${team.name}' doesn't have any cores.")
+
+        Vars.content.items().forEach {
+            team.items().set(it, Vars.state.teams.cores(team).first().storageCapacity)
+        }
+
+        sender.sendSuccess("Team '${team.name}' core filled.")
     }
 }
