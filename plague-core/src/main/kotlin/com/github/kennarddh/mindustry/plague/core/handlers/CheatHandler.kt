@@ -15,6 +15,7 @@ import com.github.kennarddh.mindustry.plague.core.commons.PlagueVars
 import com.github.kennarddh.mindustry.plague.core.commons.extensions.toDisplayString
 import mindustry.Vars
 import mindustry.game.Team
+import mindustry.type.Item
 import mindustry.type.UnitType
 import kotlin.math.floor
 import kotlin.time.Duration
@@ -83,5 +84,25 @@ class CheatHandler : Handler {
         }
 
         sender.sendSuccess("Team '${team.name}' core filled.")
+    }
+
+    @Command(["additem"])
+    @Admin
+    @Description("Add an item to a team. Only for admin.")
+    fun addItem(
+        sender: CommandSender,
+        item: Item,
+        @GTE(0) amount: Int,
+        team: Team = if (sender is PlayerCommandSender) sender.player.team() else Vars.state.map.rules().defaultTeam,
+    ) {
+        if (Vars.state.teams.cores(team).isEmpty)
+            return sender.sendError("Team '${team.name}' doesn't have any cores.")
+
+        val addedAmount =
+            amount.coerceAtMost(Vars.state.teams.cores(team).first().storageCapacity - team.items().get(item))
+
+        team.items().add(item, addedAmount)
+
+        sender.sendSuccess("Added $addedAmount ${item.name} to team '${team.name}' core.")
     }
 }
