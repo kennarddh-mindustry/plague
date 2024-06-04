@@ -103,7 +103,7 @@ class PlagueHandler : Handler {
     @Filter(FilterType.Action, Priority.High)
     fun powerSourceActionFilter(action: Administration.PlayerAction): Boolean {
         if (action.type == ActionType.breakBlock || action.type == ActionType.pickupBlock) {
-            if (action.block == Blocks.powerSource) return false
+            if (action.tile.build.block == Blocks.powerSource) return false
         }
 
         return true
