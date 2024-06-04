@@ -830,12 +830,17 @@ class PlagueHandler : Handler {
             }
         }
 
-        return sortedPlagueCores.random()
+        val bestCoreName = sortedPlagueCores[0]?.block?.name ?: return null
+
+        val bestCores = sortedPlagueCores.filter { it.block.name == bestCoreName }
+
+        return bestCores.random()
     }
 
     suspend fun setupPlayer(player: Player) {
         if (player.team() == Team.blue) {
             val randomPlagueCore = getHigestRandomPlagueCore()
+            Logger.info("Random plague core: $randomPlagueCore")
 
             CoreBlock.playerSpawn(randomPlagueCore!!.tile, player)
         }
