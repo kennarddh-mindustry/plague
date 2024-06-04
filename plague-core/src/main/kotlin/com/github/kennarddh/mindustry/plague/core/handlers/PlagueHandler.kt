@@ -588,6 +588,8 @@ class PlagueHandler : Handler {
                 event.tile.setNet(Blocks.coreShard, closestEnemyCoreInRange.team, 0)
 
                 Vars.state.teams.registerCore(event.tile.build as CoreBuild)
+                
+                event.builder.player.unit().kill()
             } else {
                 // Create new team
                 val newTeam = getNewEmptySurvivorTeam()
@@ -610,6 +612,8 @@ class PlagueHandler : Handler {
                 Vars.state.rules.loadout.forEach {
                     newTeam.core().items().add(it.item, it.amount.coerceAtMost(newTeam.core().storageCapacity))
                 }
+
+                event.builder.player.unit().kill()
             }
         }
     }
