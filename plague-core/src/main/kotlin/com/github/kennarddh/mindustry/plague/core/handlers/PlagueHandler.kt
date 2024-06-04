@@ -642,20 +642,6 @@ class PlagueHandler : Handler {
         runOnMindustryThreadSuspended {
             if (Vars.state.gameOver) return@runOnMindustryThreadSuspended
 
-            // Make sure malis core cannot be destroyed
-            Team.malis.cores().forEach {
-                it.health = Float.MAX_VALUE
-            }
-
-            // Make sure power source cannot be destroyed and cannot be disabled
-            Groups.build.forEach {
-                if (it.block.name == "power-source") {
-                    it.health = Float.MAX_VALUE
-
-                    it.enabled(true)
-                }
-            }
-
             // Make sure blue team units cannot be killed
             Groups.unit.forEach {
                 if (it.team != Team.blue) return@forEach
@@ -710,7 +696,27 @@ class PlagueHandler : Handler {
         PlagueVars.mapStartTime = Clock.System.now()
 
         runOnMindustryThread {
-            Team.malis.core()?.items()?.clear()
+            Team.malis.items()?.clear()
+
+            // Make sure malis core cannot be destroyed
+            Team.malis.cores().forEach {
+                Logger.info("${it.x} ${it.y}, ${it.block}")
+
+                it.health = Float.MAX_VALUE
+            }
+
+            // Make sure power source cannot be destroyed and cannot be disabled
+            Vars.world.tiles.forEach {
+                if (it.build == null) return@forEach
+                if (it.build.block != Blocks.powerSource) return@forEach
+                if (it.build.team != Team.malis) return@forEach
+
+                Logger.info("${it.x} ${it.y}, ${it.build.block}")
+
+                it.build.health = Float.MAX_VALUE
+
+                it.build.enabled(true)
+            }
         }
     }
 
