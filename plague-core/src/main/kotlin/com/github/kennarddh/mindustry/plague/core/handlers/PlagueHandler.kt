@@ -981,6 +981,12 @@ class PlagueHandler : Handler {
         val vault = event.tile.build as StorageBuild
 
         runOnMindustryThread {
+            if (vault.linkedCore != null) {
+                event.tile.build.tile.setNet(Blocks.coreShard, event.tile.team(), 0)
+
+                return@runOnMindustryThread
+            }
+
             val enoughResources = PlagueVars.newCoreCost.all { vault.items().get(it.item) >= it.amount }
 
             if (!enoughResources)
@@ -995,10 +1001,8 @@ class PlagueHandler : Handler {
             event.tile.build.tile.setNet(Blocks.coreShard, event.tile.team(), 0)
 
             // Refund remaining items in vault if it wasn't linked to core
-            if (vault.linkedCore == null) {
-                remainingItems.each { item, amount ->
-                    event.tile.team().items().add(item, amount)
-                }
+            remainingItems.each { item, amount ->
+                event.tile.team().items().add(item, amount)
             }
         }
     }
