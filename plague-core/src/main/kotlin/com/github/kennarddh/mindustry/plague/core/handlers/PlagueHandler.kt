@@ -51,6 +51,7 @@ import mindustry.net.Packets.KickReason
 import mindustry.server.ServerControl
 import mindustry.world.Block
 import mindustry.world.Tile
+import mindustry.world.blocks.payloads.BuildPayload
 import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 import mindustry.world.blocks.storage.StorageBlock.StorageBuild
@@ -100,6 +101,12 @@ class PlagueHandler : Handler {
 
     @Filter(FilterType.Action, Priority.High)
     fun powerSourceActionFilter(action: Administration.PlayerAction): Boolean {
+        if (Vars.state.rules.infiniteResources) return true
+
+        val payload = action.payload
+
+        if (action.type == ActionType.dropPayload && payload is BuildPayload && payload.block() == Blocks.powerSource) return false
+
         if (action.type == ActionType.breakBlock || action.type == ActionType.pickupBlock) {
             if (action.tile?.build?.block == null) return true
 
