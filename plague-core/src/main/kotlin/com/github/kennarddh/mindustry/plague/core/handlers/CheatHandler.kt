@@ -7,6 +7,7 @@ import com.github.kennarddh.mindustry.genesis.core.commands.annotations.Descript
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.CommandSender
 import com.github.kennarddh.mindustry.genesis.core.commands.senders.PlayerCommandSender
 import com.github.kennarddh.mindustry.genesis.core.commons.runOnMindustryThread
+import com.github.kennarddh.mindustry.genesis.core.commons.runOnMindustryThreadSuspended
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.genesis.standard.commands.parameters.validations.numbers.GTE
 import com.github.kennarddh.mindustry.genesis.standard.commands.parameters.validations.numbers.LTE
@@ -67,6 +68,19 @@ class CheatHandler : Handler {
     @Description("Restart game. Only for admin.")
     suspend fun gameOver(sender: CommandSender, winner: Team = Team.derelict) {
         Genesis.getHandler<PlagueHandler>()?.restart(winner)
+    }
+
+    @Command(["sandbox"])
+    @Admin
+    @Description("Toggle sandbox. Only for admin.")
+    suspend fun sandbox(sender: CommandSender) {
+        runOnMindustryThreadSuspended {
+            Vars.state.rules.infiniteResources = !Vars.state.rules.infiniteResources
+        }
+
+        Genesis.getHandler<PlagueHandler>()?.updateAllPlayerSpecificRules()
+
+        sender.sendSuccess("Sandbox is now ${if (Vars.state.rules.infiniteResources) "enabled" else "disabled"}.")
     }
 
     @Command(["fillitems"])
