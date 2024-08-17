@@ -107,24 +107,26 @@ class PlagueHandler : Handler {
     }
 
     @Filter(FilterType.Action, Priority.High)
-    fun plagueAttackerUnitsActionFilter(action: Administration.PlayerAction): Boolean {
+    suspend fun plagueAttackerUnitsActionFilter(action: Administration.PlayerAction): Boolean {
         val payload = action.payload
 
-        if (
-            action.type == ActionType.dropPayload &&
-            payload is UnitPayload &&
-            activePlagueAttackerUnits.contains(payload.unit)
-        ) return false
+        activePlagueAttackerUnitsMutex.withLock {
+            if (
+                action.type == ActionType.dropPayload &&
+                payload is UnitPayload &&
+                activePlagueAttackerUnits.contains(payload.unit)
+            ) return false
 
-        if (
-            action.type == ActionType.control &&
-            activePlagueAttackerUnits.contains(action.unit)
-        ) return false
+            if (
+                action.type == ActionType.control &&
+                activePlagueAttackerUnits.contains(action.unit)
+            ) return false
 
-        if (
-            action.type == ActionType.commandUnits &&
-            activePlagueAttackerUnits.contains(action.unit)
-        ) return false
+            if (
+                action.type == ActionType.commandUnits &&
+                activePlagueAttackerUnits.contains(action.unit)
+            ) return false
+        }
 
         return true
     }
