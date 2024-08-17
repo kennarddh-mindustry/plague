@@ -123,6 +123,9 @@ object PlagueBanned {
     val alwaysAllowedUnits: Set<UnitType> = setOf(
         UnitTypes.mono,
         UnitTypes.poly,
+        UnitTypes.mega,
+        UnitTypes.quad,
+        UnitTypes.oct,
         UnitTypes.flare
     )
 

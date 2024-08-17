@@ -1,6 +1,7 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
 import arc.math.Mathf
+import arc.struct.Seq
 import arc.util.Align
 import arc.util.Reflect
 import arc.util.Time
@@ -51,6 +52,8 @@ import mindustry.net.Administration.ActionType
 import mindustry.net.Administration.Config
 import mindustry.net.Packets.KickReason
 import mindustry.server.ServerControl
+import mindustry.type.UnitType
+import mindustry.type.Weapon
 import mindustry.world.Block
 import mindustry.world.Tile
 import mindustry.world.blocks.payloads.BuildPayload
@@ -73,6 +76,8 @@ class PlagueHandler : Handler {
 
     private val teamsPlayersUUIDBlacklist: MutableMap<Team, MutableSet<String>> = ConcurrentHashMap()
 
+    private val storedUnitsWeapons: MutableMap<UnitType, Seq<Weapon>> = ConcurrentHashMap()
+
     private var lastMinuteUpdatesInMapTimeMinute: Long = -1
 
     private val activePlagueAttackerUnits = mutableListOf<mindustry.gen.Unit>()
@@ -85,6 +90,13 @@ class PlagueHandler : Handler {
 
     override suspend fun onInit() {
         Genesis.commandRegistry.removeCommand("sync")
+
+        // Store for restoring on every SecondPhase
+        storeUnitWeapons(UnitTypes.mono)
+        storeUnitWeapons(UnitTypes.poly)
+        storeUnitWeapons(UnitTypes.mega)
+        storeUnitWeapons(UnitTypes.quad)
+        storeUnitWeapons(UnitTypes.oct)
 
         runOnMindustryThread {
             Vars.netServer.assigner = NetServer.TeamAssigner { player, _ ->
@@ -178,6 +190,30 @@ class PlagueHandler : Handler {
         if (action.player.team() == Team.blue) return false
 
         return true
+    }
+
+    private fun clearUnitWeapons(unitType: UnitType) {
+        runOnMindustryThread {
+            unitType.weapons = Seq()
+        }
+    }
+
+    private fun storeUnitWeapons(unitType: UnitType) {
+        storedUnitsWeapons[unitType] = unitType.weapons
+    }
+
+    private fun restoreUnitWeapons(unitType: UnitType) {
+        runOnMindustryThread {
+            unitType.weapons = storedUnitsWeapons.getOrDefault(unitType, unitType.weapons)
+        }
+    }
+
+    private fun restoreAllUnitsWeapons() {
+        runOnMindustryThread {
+            for (storedUnitWeapons in storedUnitsWeapons) {
+                storedUnitWeapons.key.weapons = storedUnitWeapons.value
+            }
+        }
     }
 
     /**
@@ -752,6 +788,13 @@ class PlagueHandler : Handler {
         PlagueVars.totalMapSkipDuration = 0.seconds
         PlagueVars.mapStartTime = Clock.System.now()
 
+        // Clear mono tree units weapons on every map start
+        clearUnitWeapons(UnitTypes.mono)
+        clearUnitWeapons(UnitTypes.poly)
+        clearUnitWeapons(UnitTypes.mega)
+        clearUnitWeapons(UnitTypes.quad)
+        clearUnitWeapons(UnitTypes.oct)
+
         runOnMindustryThread {
             Team.malis.items()?.clear()
 
@@ -995,6 +1038,13 @@ class PlagueHandler : Handler {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.PlayingSecondPhase
         }
+
+        // Restore mono tree units weapons
+        restoreUnitWeapons(UnitTypes.mono)
+        restoreUnitWeapons(UnitTypes.poly)
+        restoreUnitWeapons(UnitTypes.mega)
+        restoreUnitWeapons(UnitTypes.quad)
+        restoreUnitWeapons(UnitTypes.oct)
 
         runOnMindustryThread {
             runBlocking {
