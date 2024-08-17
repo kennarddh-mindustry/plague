@@ -54,6 +54,7 @@ import mindustry.server.ServerControl
 import mindustry.world.Block
 import mindustry.world.Tile
 import mindustry.world.blocks.payloads.BuildPayload
+import mindustry.world.blocks.payloads.UnitPayload
 import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 import mindustry.world.blocks.storage.StorageBlock.StorageBuild
@@ -103,6 +104,29 @@ class PlagueHandler : Handler {
                 }
             }
         }
+    }
+
+    @Filter(FilterType.Action, Priority.High)
+    fun plagueAttackerUnitsActionFilter(action: Administration.PlayerAction): Boolean {
+        val payload = action.payload
+
+        if (
+            action.type == ActionType.dropPayload &&
+            payload is UnitPayload &&
+            activePlagueAttackerUnits.contains(payload.unit)
+        ) return false
+
+        if (
+            action.type == ActionType.control &&
+            activePlagueAttackerUnits.contains(action.unit)
+        ) return false
+
+        if (
+            action.type == ActionType.commandUnits &&
+            activePlagueAttackerUnits.contains(action.unit)
+        ) return false
+
+        return true
     }
 
     @Filter(FilterType.Action, Priority.High)
