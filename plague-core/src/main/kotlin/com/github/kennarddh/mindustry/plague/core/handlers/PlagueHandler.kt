@@ -913,7 +913,7 @@ class PlagueHandler : Handler {
     @TimerTask(0f, 60f)
     suspend fun spawnPlagueAttackerZenithTimerTask() {
         PlagueVars.stateLock.withLock {
-            if (PlagueVars.state != PlagueState.PlayingSecondPhase) return
+            if (!(PlagueVars.state == PlagueState.PlayingSecondPhase || PlagueVars.state == PlagueState.Ended)) return
         }
 
         val core = getRandomPlagueCore()
