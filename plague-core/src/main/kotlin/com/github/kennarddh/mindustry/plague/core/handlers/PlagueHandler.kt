@@ -20,6 +20,7 @@ import com.github.kennarddh.mindustry.genesis.core.events.annotations.EventHandl
 import com.github.kennarddh.mindustry.genesis.core.filters.FilterType
 import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
+import com.github.kennarddh.mindustry.genesis.core.timers.annotations.TimerTask
 import com.github.kennarddh.mindustry.genesis.standard.extensions.infoPopup
 import com.github.kennarddh.mindustry.genesis.standard.extensions.setRules
 import com.github.kennarddh.mindustry.genesis.standard.handlers.tap.events.DoubleTap
@@ -29,6 +30,7 @@ import com.github.kennarddh.mindustry.plague.core.commons.extensions.toMinutesDi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import mindustry.Vars
@@ -71,6 +73,10 @@ class PlagueHandler : Handler {
     private val teamsPlayersUUIDBlacklist: MutableMap<Team, MutableSet<String>> = ConcurrentHashMap()
 
     private var lastMinuteUpdatesInMapTimeMinute: Long = -1
+
+    private val activePlagueAttackerZeniths = mutableListOf<mindustry.gen.Unit>()
+
+    private val activePlagueAttackerZenithsMutex = Mutex()
 
     companion object {
         fun isValidSurvivorTeam(team: Team) = team.id > 6
@@ -846,6 +852,8 @@ class PlagueHandler : Handler {
         return bestCores.random()
     }
 
+    fun getRandomPlagueCore(): CoreBuild? = Team.malis.cores().toList().random()
+
     suspend fun setupPlayer(player: Player) {
         if (player.team() == Team.blue) {
             val randomPlagueCore = getHigestRandomPlagueCore()
@@ -899,6 +907,27 @@ class PlagueHandler : Handler {
                 Plague Unit Multiplier: ${getPlagueUnitMultiplier()}x
                 """.trimIndent()
             )
+        }
+    }
+
+    @TimerTask(0f, 60f)
+    suspend fun spawnPlagueAttackerZenithTimerTask() {
+        PlagueVars.stateLock.withLock {
+            if (PlagueVars.state != PlagueState.PlayingSecondPhase) return
+        }
+
+        val core = getRandomPlagueCore()
+
+        val unit = runOnMindustryThreadSuspended {
+            val unit = UnitTypes.zenith.spawn(core, Team.malis)
+
+            unit.controller(PlagueAttackerZenithAI())
+
+            unit
+        }
+
+        activePlagueAttackerZenithsMutex.withLock {
+            activePlagueAttackerZeniths.add(unit)
         }
     }
 
