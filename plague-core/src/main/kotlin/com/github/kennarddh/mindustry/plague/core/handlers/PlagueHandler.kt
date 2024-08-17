@@ -1177,7 +1177,7 @@ class PlagueHandler : Handler {
     }
 
     @EventHandler
-    fun onMonoUnitCreate(event: EventType.UnitCreateEvent) {
+    fun onMonoUnitDestroyed(event: EventType.UnitDestroyEvent) {
         if (event.unit.type != UnitTypes.mono) return
 
         if (event.unit.team.core() == null) return
@@ -1186,19 +1186,28 @@ class PlagueHandler : Handler {
             Call.label(
                 "${Iconc.unitMono} created",
                 5f,
-                event.spawner.x,
-                event.spawner.y
+                event.unit.x,
+                event.unit.y
             )
-
-            // .kill() instantly kill the unit makes it weird because the unit just disappear
-            event.unit.health = 0f
-            event.unit.dead = true
 
             PlagueVars.monoReward.forEach {
                 val availableSpace = event.unit.team.core().storageCapacity - event.unit.team.items().get(it.item)
 
                 event.unit.team.items().add(it.item, it.amount.coerceAtMost(availableSpace))
             }
+        }
+    }
+
+    @EventHandler
+    fun onMonoUnitCreate(event: EventType.UnitCreateEvent) {
+        if (event.unit.type != UnitTypes.mono) return
+
+        if (event.unit.team.core() == null) return
+
+        runOnMindustryThread {
+            // .kill() instantly kill the unit makes it weird because the unit just disappear
+            event.unit.health = 0f
+            event.unit.dead = true
         }
     }
 
