@@ -842,6 +842,10 @@ class PlagueHandler : Handler {
             PlagueVars.state = PlagueState.GameOver
         }
 
+        activePlagueAttackerUnitsMutex.withLock {
+            activePlagueAttackerUnits.clear()
+        }
+
         survivorTeamsData.clear()
         teamsPlayersUUIDBlacklist.clear()
         lastMinuteUpdatesInMapTimeMinute = -1
