@@ -736,6 +736,7 @@ class PlagueHandler : Handler {
     @EventHandlerTrigger(Trigger.update)
     suspend fun onUpdate() {
         val plagueBannedUnits = PlagueBanned.getCurrentPlagueBannedUnits(false)
+        val survivorsBannedUnits = PlagueBanned.getCurrentSurvivorsBannedUnits(false)
 
         runOnMindustryThreadSuspended {
             if (Vars.state.gameOver) return@runOnMindustryThreadSuspended
@@ -748,14 +749,16 @@ class PlagueHandler : Handler {
             }
 
             Groups.build.forEach {
-                if (it.team != Team.malis) return@forEach
+                if (!(it.team == Team.malis || isValidSurvivorTeam(it.team))) return@forEach
+
+                val bannedUnits = if (it.team == Team.malis) plagueBannedUnits else survivorsBannedUnits
 
                 if (it is UnitFactoryBuild) {
                     if (it.currentPlan == -1) return@forEach
 
                     val block = it.block as UnitFactory
 
-                    if (plagueBannedUnits.contains(block.plans[it.currentPlan].unit)) {
+                    if (bannedUnits.contains(block.plans[it.currentPlan].unit)) {
                         it.enabled(false)
                     } else {
                         it.enabled(true)
@@ -763,7 +766,7 @@ class PlagueHandler : Handler {
                 } else if (it is ReconstructorBuild) {
                     if (it.payload == null) return@forEach
 
-                    if (plagueBannedUnits.contains(it.upgrade(it.payload.unit.type))) {
+                    if (bannedUnits.contains(it.upgrade(it.payload.unit.type))) {
                         it.enabled(false)
                     } else {
                         it.enabled(true)
