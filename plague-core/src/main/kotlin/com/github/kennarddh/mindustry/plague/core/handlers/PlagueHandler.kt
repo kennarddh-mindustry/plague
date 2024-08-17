@@ -61,6 +61,9 @@ import mindustry.world.blocks.payloads.UnitPayload
 import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 import mindustry.world.blocks.storage.StorageBlock.StorageBuild
+import mindustry.world.blocks.units.Reconstructor.ReconstructorBuild
+import mindustry.world.blocks.units.UnitFactory
+import mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.max
@@ -732,6 +735,8 @@ class PlagueHandler : Handler {
     @EventHandler
     @EventHandlerTrigger(Trigger.update)
     suspend fun onUpdate() {
+        val plagueBannedUnits = PlagueBanned.getCurrentPlagueBannedUnits(false)
+
         runOnMindustryThreadSuspended {
             if (Vars.state.gameOver) return@runOnMindustryThreadSuspended
 
@@ -740,6 +745,30 @@ class PlagueHandler : Handler {
                 if (it.team != Team.blue) return@forEach
 
                 it.health = Float.MAX_VALUE
+            }
+
+            Groups.build.forEach {
+                if (it.team != Team.malis) return@forEach
+
+                if (it is UnitFactoryBuild) {
+                    if (it.currentPlan == -1) return@forEach
+
+                    val block = it.block as UnitFactory
+
+                    if (plagueBannedUnits.contains(block.plans[it.currentPlan].unit)) {
+                        it.enabled(false)
+                    } else {
+                        it.enabled(true)
+                    }
+                } else if (it is ReconstructorBuild) {
+                    if (it.payload == null) return@forEach
+
+                    if (plagueBannedUnits.contains(it.upgrade(it.payload.unit.type))) {
+                        it.enabled(false)
+                    } else {
+                        it.enabled(true)
+                    }
+                }
             }
 
             if (lastMinuteUpdatesInMapTimeMinute != PlagueVars.mapTime.inWholeMinutes) {
