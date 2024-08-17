@@ -74,9 +74,9 @@ class PlagueHandler : Handler {
 
     private var lastMinuteUpdatesInMapTimeMinute: Long = -1
 
-    private val activePlagueAttackerZeniths = mutableListOf<mindustry.gen.Unit>()
+    private val activePlagueAttackerUnits = mutableListOf<mindustry.gen.Unit>()
 
-    private val activePlagueAttackerZenithsMutex = Mutex()
+    private val activePlagueAttackerUnitsMutex = Mutex()
 
     companion object {
         fun isValidSurvivorTeam(team: Team) = team.id > 6
@@ -926,8 +926,8 @@ class PlagueHandler : Handler {
             unit
         }
 
-        activePlagueAttackerZenithsMutex.withLock {
-            activePlagueAttackerZeniths.add(unit)
+        activePlagueAttackerUnitsMutex.withLock {
+            activePlagueAttackerUnits.add(unit)
         }
     }
 
@@ -1042,6 +1042,15 @@ class PlagueHandler : Handler {
             remainingItems.each { item, amount ->
                 event.tile.team().items().add(item, amount)
             }
+        }
+    }
+
+    @EventHandler
+    suspend fun onPlagueAttackerUnitDestroyed(event: EventType.UnitDestroyEvent) {
+        activePlagueAttackerUnitsMutex.withLock {
+            if (!activePlagueAttackerUnits.contains(event.unit)) return
+
+            activePlagueAttackerUnits.remove((event.unit))
         }
     }
 
