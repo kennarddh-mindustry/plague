@@ -1051,6 +1051,19 @@ class PlagueHandler : Handler {
         restoreUnitWeapons(UnitTypes.oct)
 
         runOnMindustryThread {
+            if (PlagueVars.restorePreSecondPhaseMonoTreeUnitsWeapons) {
+                Groups.unit.forEach {
+                    if (it.type == UnitTypes.mono ||
+                        it.type == UnitTypes.poly ||
+                        it.type == UnitTypes.mega ||
+                        it.type == UnitTypes.quad ||
+                        it.type == UnitTypes.oct
+                    ) {
+                        it.setupWeapons(it.type)
+                    }
+                }
+            }
+
             runBlocking {
                 Team.all.filter { isValidSurvivorTeam(it) }.forEach {
                     Vars.state.rules.teams[it].blockDamageMultiplier *= 1.3f

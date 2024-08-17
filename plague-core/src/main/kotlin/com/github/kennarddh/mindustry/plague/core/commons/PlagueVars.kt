@@ -33,4 +33,9 @@ object PlagueVars {
         }
 
     val playersWithDisabledHUD: MutableSet<Player> = Collections.synchronizedSet(mutableSetOf<Player>())
+
+    /**
+     * If this is true mono tree units made pre second phase will have their weapons restored when second phase.
+     */
+    val restorePreSecondPhaseMonoTreeUnitsWeapons: Boolean = false
 }
