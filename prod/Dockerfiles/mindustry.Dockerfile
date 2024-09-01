@@ -10,8 +10,6 @@ ADD https://github.com/kennarddh-mindustry/genesis/releases/download/v3.0.0-beta
 
 ADD https://github.com/kennarddh-mindustry/plague/releases/download/v0.0.12/plague-core-0.0.12.jar config/mods/plague-core.jar
 
-ADD https://github.com/DogeMultiverse/AlexServerPlugin/releases/download/auto_release_269/AlexServerPlugin.jar config/mods/AlexServerPlugin.jar
-
 # For ss command. ss command is used for healthcheck
 RUN apt-get update && apt-get install -y iproute2
 
