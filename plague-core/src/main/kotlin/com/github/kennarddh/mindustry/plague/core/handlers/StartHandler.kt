@@ -23,6 +23,9 @@ class StartHandler : Handler {
         Genesis.commandRegistry.removeCommand("host")
         Genesis.commandRegistry.removeCommand("load")
 
+        Config.messageRateLimit.set(1)
+        Vars.netServer.admins.playerLimit = 30
+
         PlagueRules.removeUnitsWeapons()
 
         // @EventHandler Annotation doesn't always work when the EventType is ServerLoadEvent
@@ -40,7 +43,6 @@ class StartHandler : Handler {
             Logger.info("Hosting")
 
             host()
-
         }
     }
 
