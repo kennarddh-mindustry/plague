@@ -13,6 +13,7 @@ services:
       - "6567:6567/udp"
     volumes:
       - ./prod/maps/:/app/config/maps/
+      - ./prod/config.alex:/app/config/mods/config.alex
     networks:
       - plague
     environment:
