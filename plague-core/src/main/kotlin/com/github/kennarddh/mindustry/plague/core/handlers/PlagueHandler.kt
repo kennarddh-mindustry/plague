@@ -195,6 +195,10 @@ class PlagueHandler : Handler {
         return true
     }
 
+    /**
+     * Remove units weapon so they have 0 damage.
+     * This is a slight desync but not noticeable because on client they will see they can shoot but with 0 damage.
+     */
     private fun clearUnitWeapons(unitType: UnitType) {
         runOnMindustryThread {
             unitType.weapons = Seq()
@@ -821,6 +825,10 @@ class PlagueHandler : Handler {
         PlagueVars.mapStartTime = Clock.System.now()
 
         // Clear mono tree units weapons on every map start
+        clearUnitWeapons(UnitTypes.alpha)
+        clearUnitWeapons(UnitTypes.beta)
+        clearUnitWeapons(UnitTypes.gamma)
+        clearUnitWeapons(UnitTypes.flare)
         clearUnitWeapons(UnitTypes.mono)
         clearUnitWeapons(UnitTypes.poly)
         clearUnitWeapons(UnitTypes.mega)

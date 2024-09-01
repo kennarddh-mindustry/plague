@@ -26,8 +26,6 @@ class StartHandler : Handler {
         Config.messageRateLimit.set(1)
         Vars.netServer.admins.playerLimit = 30
 
-        PlagueRules.removeUnitsWeapons()
-
         // @EventHandler Annotation doesn't always work when the EventType is ServerLoadEvent
         Events.on(EventType.ServerLoadEvent::class.java) { _ ->
             Logger.info("Server load... Will host in 1 second.")

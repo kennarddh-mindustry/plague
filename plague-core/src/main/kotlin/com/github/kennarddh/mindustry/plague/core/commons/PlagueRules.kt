@@ -26,7 +26,6 @@ object PlagueRules {
         rules.hideBannedBlocks = true
         rules.unitWhitelist = false
         rules.blockWhitelist = false
-        rules.reactorExplosions = false
         rules.unitCapVariable = false
 
         if (Vars.state.map == null) {
@@ -36,16 +35,5 @@ object PlagueRules {
         }
 
         return rules
-    }
-
-    fun removeUnitsWeapons() {
-        // Remove units weapon so they have 0 damage.
-        // This is a slight desync but not noticeable because on client they will see they can shoot but with 0 damage.
-        UnitTypes.alpha.weapons = Seq()
-        UnitTypes.beta.weapons = Seq()
-        UnitTypes.gamma.weapons = Seq()
-        UnitTypes.poly.weapons = Seq()
-        UnitTypes.mega.weapons = Seq()
-        UnitTypes.flare.weapons = Seq()
     }
 }
