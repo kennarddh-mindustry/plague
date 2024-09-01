@@ -14,6 +14,7 @@ services:
     volumes:
       - ./prod/maps/:/app/config/maps/
       - ./prod/config.alex:/app/config/mods/config.alex
+      - ./prod/ASP_version.txt:/app/config/mods/ASP_version.txt
       - ./prod/AlexServerPlugin.jar:/app/config/mods/AlexServerPlugin.jar
     networks:
       - plague
