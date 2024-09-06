@@ -1,9 +1,7 @@
 package com.github.kennarddh.mindustry.plague.core.commons
 
-import arc.struct.Seq
 import com.github.kennarddh.mindustry.plague.core.handlers.PlagueHandler
 import mindustry.Vars
-import mindustry.content.UnitTypes
 import mindustry.game.Rules
 import mindustry.game.Team
 
@@ -13,7 +11,7 @@ object PlagueRules {
 
         rules.canGameOver = false
         rules.hideBannedBlocks = true
-        rules.enemyCoreBuildRadius = 50f * Vars.tilesize
+        rules.enemyCoreBuildRadius = 70f * Vars.tilesize
         rules.damageExplosions = false
         rules.reactorExplosions = false
 

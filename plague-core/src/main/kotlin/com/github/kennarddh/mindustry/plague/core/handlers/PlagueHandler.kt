@@ -641,7 +641,7 @@ class PlagueHandler : Handler {
             val (closestEnemyCoreInRange, distanceToClosestEnemyCoreInRange) = getClosestEnemyCore(
                 event.tile.y.toFloat() * Vars.tilesize,
                 event.tile.x.toFloat() * Vars.tilesize,
-                0f..(70f * Vars.tilesize)
+                0f..(100f * Vars.tilesize)
             )
 
             if (distanceToClosestEnemyCoreInRange < 50 * Vars.tilesize)
