@@ -222,7 +222,7 @@ object PlagueBanned {
 
                 PlagueState.GameOver,
                 PlagueState.PlayingSecondPhase,
-                PlagueState.Ended -> allUnits - alwaysAllowedUnits - serpuloGroundUnits - serpuloNavalUnits - serpuloAirUnits - erekirTankUnits - erekirShipUnits - erekirMechUnits
+                PlagueState.SuddenDeath -> allUnits - alwaysAllowedUnits - serpuloGroundUnits - serpuloNavalUnits - serpuloAirUnits - erekirTankUnits - erekirShipUnits - erekirMechUnits
             }
         }
 
@@ -242,7 +242,7 @@ object PlagueBanned {
                 PlagueState.Prepare,
                 PlagueState.PlayingFirstPhase,
                 PlagueState.PlayingSecondPhase,
-                PlagueState.Ended -> allUnits - alwaysAllowedUnits
+                PlagueState.SuddenDeath -> allUnits - alwaysAllowedUnits
             }
         }
 
@@ -264,7 +264,7 @@ object PlagueBanned {
                 PlagueState.GameOver,
                 PlagueState.PlayingFirstPhase,
                 PlagueState.PlayingSecondPhase,
-                PlagueState.Ended -> plagueBannedBlocks - unitConstructorBlocks
+                PlagueState.SuddenDeath -> plagueBannedBlocks - unitConstructorBlocks
             }
         }
 

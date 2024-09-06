@@ -276,7 +276,7 @@ class PlagueHandler : Handler {
 
         if (survivorTeamsData.isNotEmpty()) return
 
-        if (state == PlagueState.Ended) {
+        if (state == PlagueState.SuddenDeath) {
             Call.infoMessage("[green]All survivors have been destroyed.")
 
             restart(Team.derelict)
@@ -808,7 +808,7 @@ class PlagueHandler : Handler {
             } else if (PlagueVars.state == PlagueState.PlayingFirstPhase && PlagueVars.mapTime >= PlagueVars.state.startTime) {
                 CoroutineScopes.Main.launch { onSecondPhase() }
             } else if (PlagueVars.state == PlagueState.PlayingSecondPhase && PlagueVars.mapTime >= PlagueVars.state.startTime) {
-                CoroutineScopes.Main.launch { onEnded() }
+                CoroutineScopes.Main.launch { onSuddenDeath() }
             } else {
                 // Empty else because this 'if' is seen as an expression
             }
@@ -1026,7 +1026,7 @@ class PlagueHandler : Handler {
     @TimerTask(0f, 60f)
     suspend fun spawnPlagueAttackerZenithTimerTask() {
         PlagueVars.stateLock.withLock {
-            if (!(PlagueVars.state == PlagueState.PlayingSecondPhase || PlagueVars.state == PlagueState.Ended)) return
+            if (!(PlagueVars.state == PlagueState.PlayingSecondPhase || PlagueVars.state == PlagueState.SuddenDeath)) return
         }
 
         val core = getRandomPlagueCore()
@@ -1114,9 +1114,9 @@ class PlagueHandler : Handler {
         }
     }
 
-    suspend fun onEnded() {
+    suspend fun onSuddenDeath() {
         PlagueVars.stateLock.withLock {
-            PlagueVars.state = PlagueState.Ended
+            PlagueVars.state = PlagueState.SuddenDeath
         }
 
         runOnMindustryThread {
