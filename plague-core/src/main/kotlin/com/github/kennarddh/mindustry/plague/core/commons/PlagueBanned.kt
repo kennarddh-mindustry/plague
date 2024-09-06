@@ -117,7 +117,9 @@ object PlagueBanned {
                 Blocks.chemicalCombustionChamber,
                 Blocks.pyrolysisGenerator,
                 Blocks.fluxReactor,
-                Blocks.neoplasiaReactor
+                Blocks.neoplasiaReactor,
+
+                Blocks.blastMixer
             )
 
     val alwaysAllowedUnits: Set<UnitType> = setOf(

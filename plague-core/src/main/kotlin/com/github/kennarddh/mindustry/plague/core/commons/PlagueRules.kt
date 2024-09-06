@@ -12,7 +12,7 @@ object PlagueRules {
         rules.canGameOver = false
         rules.hideBannedBlocks = true
         rules.enemyCoreBuildRadius = 70f * Vars.tilesize
-        rules.damageExplosions = false
+        rules.damageExplosions = true
         rules.reactorExplosions = false
 
         Team.all.filter { PlagueHandler.isValidSurvivorTeam(it) }.forEach {
