@@ -664,7 +664,7 @@ class PlagueHandler : Handler {
                     changePlayerTeam(event.builder.player, closestEnemyCoreInRange.team)
                 }
 
-                event.tile.setNet(Blocks.coreShard, closestEnemyCoreInRange.team, 0)
+                event.tile.setNet(Blocks.coreFoundation, closestEnemyCoreInRange.team, 0)
 
                 Vars.state.teams.registerCore(event.tile.build as CoreBuild)
 
@@ -684,7 +684,7 @@ class PlagueHandler : Handler {
                     changePlayerTeam(event.builder.player, newTeam)
                 }
 
-                event.tile.setNet(Blocks.coreShard, newTeam, 0)
+                event.tile.setNet(Blocks.coreFoundation, newTeam, 0)
 
                 Vars.state.teams.registerCore(event.tile.build as CoreBuild)
 
