@@ -95,9 +95,6 @@ class PlagueHandler : Handler {
         Genesis.commandRegistry.removeCommand("sync")
 
         // Store for restoring on every SecondPhase
-        storeUnitWeapons(UnitTypes.mono)
-        storeUnitWeapons(UnitTypes.poly)
-        storeUnitWeapons(UnitTypes.mega)
         storeUnitWeapons(UnitTypes.quad)
         storeUnitWeapons(UnitTypes.oct)
 
@@ -1078,24 +1075,19 @@ class PlagueHandler : Handler {
         }
     }
 
-    suspend fun onSecondPhase() {
+    private suspend fun onSecondPhase() {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.PlayingSecondPhase
         }
 
         // Restore mono tree units weapons
-        restoreUnitWeapons(UnitTypes.mono)
-        restoreUnitWeapons(UnitTypes.poly)
-        restoreUnitWeapons(UnitTypes.mega)
         restoreUnitWeapons(UnitTypes.quad)
         restoreUnitWeapons(UnitTypes.oct)
 
         runOnMindustryThread {
             if (PlagueVars.restorePreSecondPhaseMonoTreeUnitsWeapons) {
                 Groups.unit.forEach {
-                    if (it.type == UnitTypes.mono ||
-                        it.type == UnitTypes.poly ||
-                        it.type == UnitTypes.mega ||
+                    if (
                         it.type == UnitTypes.quad ||
                         it.type == UnitTypes.oct
                     ) {
@@ -1114,7 +1106,7 @@ class PlagueHandler : Handler {
         }
     }
 
-    suspend fun onSuddenDeath() {
+    private suspend fun onSuddenDeath() {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.SuddenDeath
         }
