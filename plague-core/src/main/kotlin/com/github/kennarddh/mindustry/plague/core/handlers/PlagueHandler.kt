@@ -641,11 +641,11 @@ class PlagueHandler : Handler {
             val (closestEnemyCoreInRange, distanceToClosestEnemyCoreInRange) = getClosestEnemyCore(
                 event.tile.y.toFloat() * Vars.tilesize,
                 event.tile.x.toFloat() * Vars.tilesize,
-                0f..(100f * Vars.tilesize)
+                0f..(120f * Vars.tilesize)
             )
 
-            if (distanceToClosestEnemyCoreInRange < 50 * Vars.tilesize)
-                return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Core must be at least 50 tiles away from nearest survivor's core.")
+            if (distanceToClosestEnemyCoreInRange < 70 * Vars.tilesize)
+                return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Core must be at least 70 tiles away from nearest survivor's core.")
 
             if (closestEnemyCoreInRange != null) {
                 // Join closest survivor core team
