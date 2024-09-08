@@ -371,7 +371,7 @@ class PlagueHandler : Handler {
                 if (isValidSurvivorTeam(sender.player.team()))
                     leaveSurvivorTeam(sender.player)
 
-                changePlayerTeam(sender.player, Team.blue)
+                changePlayerTeam(sender.player, Team.malis)
 
                 sender.player.unit().kill()
 
