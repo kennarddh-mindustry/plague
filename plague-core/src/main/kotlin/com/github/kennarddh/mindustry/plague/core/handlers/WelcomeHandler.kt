@@ -15,13 +15,15 @@ class WelcomeHandler : Handler {
     fun onPlayerJoin(event: EventType.PlayerJoin) {
         event.player.infoMessage(
             """
-            This is a game of [forest]Plague[](default) vs [yellow]Survivor[]. Last one standing.
-            Prepare state(2 minutes): Choose to be [yellow]Survivor[], or join a [yellow]Survivor[] team. Place any block away from plague core to become [yellow]Survivor[].
-            First Phase(45 minutes): [forest]Plague[] make units, [yellow]Survivor[] make defense. Air units don't do damage.
-            Second Phase(15 minutes): Air units do damage.
-            Sudden Death: [yellow]Survivors[] won, but [forest]Plague[] multiplies in strength. [yellow]Survive[] as long as possible.
-            
-            Full Rules: Join discord by using [accent]/discord[] command.
+            [maroon]=== [gold]QUICK START[] ===[]\n
+            This is a game of [forest]Plague[](default) vs [yellow]Survivor[]. Last one standing.\n
+            [maroon]=== [gold]GAME STAGES[] ===[]\n
+            [royal]Prepare state (2min)[]: Choose to be [yellow]Survivor[], or join a [yellow]Survivor[] team. Place any block away from plague core to become [yellow]Survivor[].
+            [royal]First Phase (45min)[]: [forest]Plague[] make units, [yellow]Survivor[] make defense. Air units don't do damage.
+            [royal]Second Phase (15min)[]: Air units do damage.
+            [royal]Sudden Death[]: [yellow]Survivors[] won, but [forest]Plague[] multiplies in strength. [yellow]Survive[] as long as possible.
+            \n
+            Full Rules in discord. Use [accent]/discord[] command.
             """.trimIndent()
         )
     }
