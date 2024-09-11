@@ -149,9 +149,10 @@ class PlagueHandler : Handler {
 
         val payload = action.payload
 
+
         if (action.type == ActionType.dropPayload && payload is BuildPayload && payload.block() == Blocks.powerSource) return false
 
-        if (action.type == ActionType.breakBlock || action.type == ActionType.pickupBlock) {
+        if (action.type == ActionType.breakBlock || action.type == ActionType.pickupBlock || action.type == ActionType.placeBlock) {
             if (action.tile?.build?.block == null) return true
 
             if (action.tile.build.block == Blocks.powerSource) return false
