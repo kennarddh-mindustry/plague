@@ -1,6 +1,5 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
-import arc.math.Mathf
 import arc.struct.Seq
 import arc.util.Align
 import arc.util.Reflect
@@ -537,7 +536,7 @@ class PlagueHandler : Handler {
             if (ignoredTeams.contains(activeTeam.team)) continue
 
             for (core in activeTeam.cores) {
-                val distance = Mathf.dst(x, y, core.x, core.y)
+                val distance = core.dst(x, y)
 
                 if (distance !in distanceRange) continue
 
@@ -640,9 +639,10 @@ class PlagueHandler : Handler {
             }
 
             val (closestEnemyCoreInRange, distanceToClosestEnemyCoreInRange) = getClosestEnemyCore(
-                event.tile.y.toFloat() * Vars.tilesize,
                 event.tile.x.toFloat() * Vars.tilesize,
-                0f..(120f * Vars.tilesize)
+                event.tile.y.toFloat() * Vars.tilesize,
+                0f..(120f * Vars.tilesize),
+                listOf(Team.malis)
             )
 
             if (distanceToClosestEnemyCoreInRange < 70 * Vars.tilesize)
