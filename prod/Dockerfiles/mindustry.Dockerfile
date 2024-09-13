@@ -14,4 +14,5 @@ ADD https://github.com/kennarddh-mindustry/plague/releases/download/v0.0.15/plag
 RUN apt-get update && apt-get install -y iproute2
 
 # https://dzone.com/articles/gracefully-shutting-down-java-in-containers
-ENTRYPOINT exec java -XX:+ExitOnOutOfMemoryError -jar server-release.jar
+# https://stackoverflow.com/questions/542979/where-dump-is-dumped-using-heapdumponoutofmemoryerror-parameter-for-jboss
+ENTRYPOINT exec java -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./dumps/ -jar server-release.jar
