@@ -1057,27 +1057,6 @@ class PlagueHandler : Handler {
         }
     }
 
-    @TimerTask(0f, 60f)
-    suspend fun spawnPlagueAttackerQuadTimerTask() {
-        PlagueVars.stateLock.withLock {
-            if (PlagueVars.state != PlagueState.SuddenDeath) return
-        }
-
-        val core = getRandomPlagueCore()
-
-        val unit = runOnMindustryThreadSuspended {
-            val unit = UnitTypes.quad.spawn(core, Team.malis)
-
-            unit.controller(PlagueAttackerFlyingAI())
-
-            unit
-        }
-
-        activePlagueAttackerUnitsMutex.withLock {
-            activePlagueAttackerUnits.add(unit)
-        }
-    }
-
     suspend fun onFirstPhase() {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.PlayingFirstPhase
