@@ -1044,6 +1044,8 @@ class PlagueHandler : Handler {
             for (i in 0..<zenithCount) {
                 val unit = UnitTypes.zenith.spawn(core, Team.malis)
 
+                unit.team.data().updateCount(unit.type, -1)
+
                 unit.controller(PlagueAttackerFlyingAI())
 
                 units.add(unit)
