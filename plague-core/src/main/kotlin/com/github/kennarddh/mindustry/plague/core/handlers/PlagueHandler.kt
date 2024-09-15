@@ -65,6 +65,7 @@ import mindustry.world.blocks.units.UnitFactory
 import mindustry.world.blocks.units.UnitFactory.UnitFactoryBuild
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.round
@@ -992,6 +993,12 @@ class PlagueHandler : Handler {
         return 52.2f * 1.8f.pow((mapTimeInMinutes - 120) / 10f)
     }
 
+    fun getPlagueAttackerUnitsCount(): Int {
+        val mapTimeInMinutes = max(1, PlagueVars.mapTime.inWholeMinutes.toInt())
+
+        return floor(((mapTimeInMinutes - 50f) / 10f).pow(1.5f)).toInt()
+    }
+
     /**
      * This is also called when player is done loading new map
      */
@@ -1029,16 +1036,24 @@ class PlagueHandler : Handler {
 
         val core = getRandomPlagueCore()
 
-        val unit = runOnMindustryThreadSuspended {
-            val unit = UnitTypes.zenith.spawn(core, Team.malis)
+        val zenithCount = getPlagueAttackerUnitsCount()
 
-            unit.controller(PlagueAttackerFlyingAI())
+        val units = runOnMindustryThreadSuspended {
+            val units = mutableListOf<mindustry.gen.Unit>()
 
-            unit
+            for (i in 0..<zenithCount) {
+                val unit = UnitTypes.zenith.spawn(core, Team.malis)
+
+                unit.controller(PlagueAttackerFlyingAI())
+
+                units.add(unit)
+            }
+
+            units
         }
 
         activePlagueAttackerUnitsMutex.withLock {
-            activePlagueAttackerUnits.add(unit)
+            activePlagueAttackerUnits.addAll(units)
         }
     }
 
