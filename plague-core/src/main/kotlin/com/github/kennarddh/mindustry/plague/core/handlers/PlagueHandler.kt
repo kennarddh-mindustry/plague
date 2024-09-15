@@ -750,6 +750,11 @@ class PlagueHandler : Handler {
                 it.health = Float.MAX_VALUE
             }
 
+            // Make sure malis core cannot be destroyed
+            Team.malis.cores().forEach {
+                it.health = Float.MAX_VALUE
+            }
+
             Groups.build.forEach {
                 if (!(it.team == Team.malis || isValidSurvivorTeam(it.team))) return@forEach
 
@@ -835,11 +840,6 @@ class PlagueHandler : Handler {
 
         runOnMindustryThread {
             Team.malis.items()?.clear()
-
-            // Make sure malis core cannot be destroyed
-            Team.malis.cores().forEach {
-                it.health = Float.MAX_VALUE
-            }
 
             // Make sure power source cannot be destroyed and cannot be disabled
             Vars.world.tiles.forEach {
