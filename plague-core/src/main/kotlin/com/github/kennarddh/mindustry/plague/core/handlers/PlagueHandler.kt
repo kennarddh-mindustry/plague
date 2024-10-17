@@ -618,6 +618,25 @@ class PlagueHandler : Handler {
         }
     }
 
+
+    @EventHandler
+    fun minimumBuildRangeFromPlagueCoreForSurvivorsEventHandler(event: EventType.BuildSelectEvent) {
+        if (event.builder.player == null) return
+        if (!isValidSurvivorTeam(event.builder.team())) return
+
+        runOnMindustryThread {
+            for (core in Team.malis.cores()) {
+                if (core.dst(event.tile) < 100 * Vars.tilesize) {
+                    event.tile.removeNet()
+
+                    event.builder.player.sendMessage("[scarlet]Building must be at least 100 tiles away from nearest plague's core.")
+
+                    return@runOnMindustryThread
+                }
+            }
+        }
+    }
+
     @EventHandler
     suspend fun createSurvivorCoreEventHandler(event: EventType.BuildSelectEvent) {
         PlagueVars.stateLock.withLock {
