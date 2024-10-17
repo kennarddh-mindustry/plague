@@ -38,4 +38,8 @@ object PlagueVars {
      * If this is true mono tree units made pre second phase will have their weapons restored when second phase.
      */
     val restorePreSecondPhaseMonoTreeUnitsWeapons: Boolean = false
+
+    val survivorsMinBuildRangeFromPlagueCoreInTiles: Int = 100
+    val newSurvivorCoreMinDistanceFromPlagueCoreInTiles: Int = 70
+    val survivorCoreMaxJoinDistanceInTiles: Int = 120
 }

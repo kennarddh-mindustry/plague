@@ -149,7 +149,6 @@ class PlagueHandler : Handler {
 
         val payload = action.payload
 
-
         if (action.type == ActionType.dropPayload && payload is BuildPayload && payload.block() == Blocks.powerSource) return false
 
         if (action.type == ActionType.breakBlock || action.type == ActionType.pickupBlock || action.type == ActionType.placeBlock) {
@@ -620,13 +619,13 @@ class PlagueHandler : Handler {
 
 
     @EventHandler
-    fun minimumBuildRangeFromPlagueCoreForSurvivorsEventHandler(event: EventType.BuildSelectEvent) {
+    fun survivorsMinimumBuildRangeFromPlagueCoreEventHandler(event: EventType.BuildSelectEvent) {
         if (event.builder.player == null) return
         if (!isValidSurvivorTeam(event.builder.team())) return
 
         runOnMindustryThread {
             for (core in Team.malis.cores()) {
-                if (core.dst(event.tile) < 100 * Vars.tilesize) {
+                if (core.dst(event.tile) < PlagueVars.survivorsMinBuildRangeFromPlagueCoreInTiles * Vars.tilesize) {
                     event.tile.removeNet()
 
                     event.builder.player.sendMessage("[scarlet]Building must be at least 100 tiles away from nearest plague's core.")
@@ -661,11 +660,11 @@ class PlagueHandler : Handler {
             val (closestEnemyCoreInRange, distanceToClosestEnemyCoreInRange) = getClosestEnemyCore(
                 event.tile.x.toFloat() * Vars.tilesize,
                 event.tile.y.toFloat() * Vars.tilesize,
-                0f..(120f * Vars.tilesize),
+                0f..((PlagueVars.survivorCoreMaxJoinDistanceInTiles * Vars.tilesize).toFloat()),
                 listOf(Team.malis)
             )
 
-            if (distanceToClosestEnemyCoreInRange < 70 * Vars.tilesize)
+            if (distanceToClosestEnemyCoreInRange < PlagueVars.newSurvivorCoreMinDistanceFromPlagueCoreInTiles * Vars.tilesize)
                 return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Core must be at least 70 tiles away from nearest survivor's core.")
 
             if (closestEnemyCoreInRange != null) {
@@ -1224,7 +1223,7 @@ class PlagueHandler : Handler {
 
         runOnMindustryThread {
             Call.label(
-                "${Iconc.unitMono} created",
+                "${Iconc.unitMono} Created",
                 5f,
                 event.unit.x,
                 event.unit.y
