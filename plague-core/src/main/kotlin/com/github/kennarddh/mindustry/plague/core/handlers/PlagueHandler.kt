@@ -295,12 +295,21 @@ class PlagueHandler : Handler {
         if (teamData.players.size - 1 == 0) {
             if (player.team() != Team.blue) {
                 teamsPlayersUUIDBlacklist.remove(player.team())
+                survivorTeamsData.remove(player.team())
 
                 Call.sendMessage("[accent]All ${player.team().name} team players left. Team will be removed.")
 
-                clearTeam(player.team())
+                runBlocking {
+                    teamData.players.forEach {
+                        changePlayerTeam(it, Team.malis)
 
-                survivorTeamsData.remove(player.team())
+                        it.unit().kill()
+
+                        Call.sendMessage("[scarlet]'${it.plainName()}' has been infected.")
+                    }
+                }
+
+                clearTeam(teamData.team)
 
                 CoroutineScopes.Main.launch {
                     onSurvivorTeamDestroyed()
@@ -570,7 +579,8 @@ class PlagueHandler : Handler {
         val coreBuild = event.tile.build as CoreBuild
 
         runOnMindustryThread {
-            // Minus 1 because core have not been destroyed here
+            if (!survivorTeamsData.contains(coreBuild.team)) return@runOnMindustryThread
+
             if (coreBuild.team.cores().size != 0) return@runOnMindustryThread
 
             val teamData = Vars.state.teams[coreBuild.team]
