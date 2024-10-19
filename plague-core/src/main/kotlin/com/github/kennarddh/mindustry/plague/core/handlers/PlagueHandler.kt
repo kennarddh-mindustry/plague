@@ -569,12 +569,12 @@ class PlagueHandler : Handler {
 
         val coreBuild = event.tile.build as CoreBuild
 
-        // Minus 1 because core have not been destroyed here
-        if (coreBuild.team.cores().size - 1 != 0) return
-
-        val teamData = Vars.state.teams[coreBuild.team]
-
         runOnMindustryThread {
+            // Minus 1 because core have not been destroyed here
+            if (coreBuild.team.cores().size != 0) return@runOnMindustryThread
+
+            val teamData = Vars.state.teams[coreBuild.team]
+
             Call.sendMessage("[scarlet]'${coreBuild.team.name}' survivor team lost.")
 
             clearTeam(coreBuild.team)
@@ -588,11 +588,13 @@ class PlagueHandler : Handler {
                     Call.sendMessage("[scarlet]'${it.plainName()}' has been infected.")
                 }
             }
+
+            CoroutineScopes.Main.launch {
+                survivorTeamsData.remove(coreBuild.team)
+
+                onSurvivorTeamDestroyed()
+            }
         }
-
-        survivorTeamsData.remove(coreBuild.team)
-
-        onSurvivorTeamDestroyed()
     }
 
     @Command(["sync"])
