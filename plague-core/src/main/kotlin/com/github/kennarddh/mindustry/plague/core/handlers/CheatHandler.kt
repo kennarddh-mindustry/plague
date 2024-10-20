@@ -16,6 +16,7 @@ import com.github.kennarddh.mindustry.plague.core.commons.PlagueVars
 import com.github.kennarddh.mindustry.plague.core.commons.extensions.toDisplayString
 import mindustry.Vars
 import mindustry.game.Team
+import mindustry.gen.Player
 import mindustry.type.Item
 import mindustry.type.UnitType
 import kotlin.math.floor
@@ -142,6 +143,21 @@ class CheatHandler : Handler {
             team.items().remove(item, removedAmount)
 
             sender.sendSuccess("Removed $removedAmount ${item.name} from team '${team.name}' core.")
+        }
+    }
+
+    @Command(["changeteam"])
+    @Admin
+    @Description("Change team. Only for admin.")
+    fun changeTeam(
+        sender: CommandSender,
+        team: Team = if (sender is PlayerCommandSender) sender.player.team() else Vars.state.map.rules().defaultTeam,
+        player: Player,
+    ) {
+        runOnMindustryThread {
+            player.team(team)
+
+            sender.sendSuccess("Changed '${player.plainName()}' team to '${team.name}'.")
         }
     }
 }
