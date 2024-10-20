@@ -1281,9 +1281,9 @@ class PlagueHandler : Handler {
     fun onMonoUnitDestroyed(event: EventType.UnitDestroyEvent) {
         if (event.unit.type != UnitTypes.mono) return
 
-        if (event.unit.team.core() == null) return
-
         runOnMindustryThread {
+            if (event.unit.team.core() != null) return@runOnMindustryThread
+
             Call.label(
                 "${Iconc.unitMono} Created",
                 5f,
