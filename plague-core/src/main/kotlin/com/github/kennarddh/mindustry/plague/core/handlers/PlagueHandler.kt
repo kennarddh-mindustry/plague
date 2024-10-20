@@ -624,11 +624,11 @@ class PlagueHandler : Handler {
 
     @EventHandler
     suspend fun onCoreDestroyed(event: EventType.BlockDestroyEvent) {
-        if (event.tile.build !is CoreBuild) return
-
-        val coreBuild = event.tile.build as CoreBuild
-
         runOnMindustryThread {
+            if (event.tile.build !is CoreBuild) return@runOnMindustryThread
+
+            val coreBuild = event.tile.build as CoreBuild
+
             if (!survivorTeamsData.contains(coreBuild.team)) return@runOnMindustryThread
 
             if (coreBuild.team.cores().size != 0) return@runOnMindustryThread
@@ -947,6 +947,7 @@ class PlagueHandler : Handler {
             if (teamData.players.size == 0)
                 return@runOnMindustryThread
 
+            // Team's owner is not given to other player because the owner might join again.
             Groups.player.filter { survivorTeamsData[teamOwned.key]?.playersUUID?.contains(it.uuid()) ?: false }
                 .forEach {
                     it.sendMessage("[accent]Team owner left.")
