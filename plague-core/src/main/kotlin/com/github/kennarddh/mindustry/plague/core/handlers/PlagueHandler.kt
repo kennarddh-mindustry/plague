@@ -350,6 +350,56 @@ class PlagueHandler : Handler {
         }
     }
 
+    @Command(["teaminfo"])
+    @Description("Shows info of a team.")
+    fun teamInfo(
+        sender: CommandSender,
+        team: Team = if (sender is PlayerCommandSender) sender.player.team() else Vars.state.map.rules().defaultTeam,
+    ) {
+        val teamData = Vars.state.teams[team]
+
+        if (team == Team.malis) {
+            sender.sendSuccess(
+                """
+                Team: Plague
+                Players: (${teamData.players.size}) ${teamData.players.joinToString(", ") { it.plainName() }}
+                Cores: (${teamData.cores.size})
+                Units: (${teamData.units.size})
+                """.trimIndent()
+            )
+        } else if (isValidSurvivorTeam((team))) {
+            val survivorTeamData = survivorTeamsData[team]
+                ?: return sender.sendError("Error occurred. SurvivorTeamData == null.")
+
+            sender.sendSuccess(
+                """
+                Team: ${team.name} (Survivor)
+                Owner: ${
+                    (Groups.player.find { it.uuid() == survivorTeamData.ownerUUID }
+                        .plainName()) ?: "[accent]${survivorTeamData.ownerUUID}[]"
+                }
+                Locked: ${survivorTeamData.locked}
+                Players: (${teamData.players.size}) ${
+                    survivorTeamData.playersUUID.joinToString(", ") { playerUUID ->
+                        (Groups.player.find { it.uuid() == playerUUID }.plainName()) ?: "[accent]${playerUUID}[]"
+                    }
+                }
+                Cores: (${teamData.cores.size})
+                Units: (${teamData.units.size})
+                """.trimIndent()
+            )
+        } else if (team == Team.blue) {
+            sender.sendSuccess(
+                """
+                Team: No Team
+                Players: (${teamData.players.size}) ${teamData.players.joinToString(", ") { it.plainName() }}
+                """.trimIndent()
+            )
+        } else {
+            sender.sendError("Invalid team '${team.name}'.")
+        }
+    }
+
     @Command(["teamleave"])
     @Description("Leave your current team.")
     suspend fun teamLeave(sender: PlayerCommandSender) {
