@@ -1084,9 +1084,9 @@ class PlagueHandler : Handler {
      */
     @EventHandler
     fun onPlayerConnectionConfirmed(event: EventType.PlayerConnectionConfirmed) {
-        if (!event.player.dead()) return
-
         runOnMindustryThread {
+            if (!event.player.dead()) return@runOnMindustryThread
+
             runBlocking {
                 setupPlayer(event.player)
             }
@@ -1114,11 +1114,11 @@ class PlagueHandler : Handler {
             if (!(PlagueVars.state == PlagueState.PlayingSecondPhase || PlagueVars.state == PlagueState.SuddenDeath)) return
         }
 
-        val core = getRandomPlagueCore()
-
         val zenithCount = getPlagueAttackerUnitsCount()
 
-        val units = runOnMindustryThreadSuspended {
+        runOnMindustryThreadSuspended {
+            val core = getRandomPlagueCore()
+
             val units = mutableListOf<mindustry.gen.Unit>()
 
             for (i in 0..<zenithCount) {
@@ -1131,11 +1131,11 @@ class PlagueHandler : Handler {
                 units.add(unit)
             }
 
-            units
-        }
-
-        activePlagueAttackerUnitsMutex.withLock {
-            activePlagueAttackerUnits.addAll(units)
+            runBlocking {
+                activePlagueAttackerUnitsMutex.withLock {
+                    activePlagueAttackerUnits.addAll(units)
+                }
+            }
         }
     }
 
@@ -1213,35 +1213,35 @@ class PlagueHandler : Handler {
             runBlocking {
                 updateAllPlayerSpecificRules()
             }
-        }
 
-        val survivorTeams = Vars.state.teams.active.toList().filter { isValidSurvivorTeam(it.team) }
+            val survivorTeams = Vars.state.teams.active.toList().filter { isValidSurvivorTeam(it.team) }
 
-        if (survivorTeams.isEmpty()) return
+            if (survivorTeams.isEmpty()) return@runOnMindustryThread
 
-        Call.infoMessage(
-            """
+            Call.infoMessage(
+                """
             [green]Survivor teams won.
             [green]${survivorTeams.joinToString(", ") { "'${it.team.name}'" }} won.
             [scarlet]Plague lost.
             [white]Game will still continue.
             """.trimIndent()
-        )
+            )
+        }
     }
 
     @EventHandler
     fun onDoubleTap(event: DoubleTap) {
         if (!isValidSurvivorTeam(event.player.team())) return
 
-        if (event.tile.build !is StorageBuild) return
-
-        if (event.tile.block().name != "vault") return
-
-        if (event.tile.build.team != event.player.team()) return
-
-        val vault = event.tile.build as StorageBuild
-
         runOnMindustryThread {
+            if (event.tile.build !is StorageBuild) return@runOnMindustryThread
+
+            if (event.tile.block().name != "vault") return@runOnMindustryThread
+
+            if (event.tile.build.team != event.player.team()) return@runOnMindustryThread
+
+            val vault = event.tile.build as StorageBuild
+
             if (vault.linkedCore != null) {
                 event.tile.build.tile.setNet(Blocks.coreShard, event.tile.team(), 0)
 
@@ -1303,9 +1303,9 @@ class PlagueHandler : Handler {
     fun onMonoUnitCreate(event: EventType.UnitCreateEvent) {
         if (event.unit.type != UnitTypes.mono) return
 
-        if (event.unit.team.core() == null) return
-
         runOnMindustryThread {
+            if (event.unit.team.core() == null) return@runOnMindustryThread
+
             // .kill() instantly kill the unit makes it weird because the unit just disappear
             event.unit.health = 0f
             event.unit.dead = true
