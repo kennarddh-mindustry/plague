@@ -1,7 +1,6 @@
 package com.github.kennarddh.mindustry.plague.core.handlers
 
 import arc.struct.Seq
-import arc.util.Align
 import arc.util.Reflect
 import arc.util.Time
 import arc.util.Timer
@@ -779,22 +778,61 @@ class PlagueHandler : Handler {
         }
     }
 
+    fun getDefaultPlayerHUDInfo() = PlayerHUDInfo(
+        true,
+        Align.TopLeft,
+        200, 0, 0, 100
+    )
+
+    fun safeGetPlayerHUDInfo(player: Player): PlayerHUDInfo {
+        return PlagueVars.playersHUDInfo.getOrPut(player, this::getDefaultPlayerHUDInfo)
+    }
+
     @Command(["hud"])
     @Description("Toggle HUD.")
     fun toggleHUD(sender: PlayerCommandSender) {
-        val wasDisabled = PlagueVars.playersWithDisabledHUD.contains(sender.player)
+        val playerHUDInfo = safeGetPlayerHUDInfo(sender.player)
 
-        if (wasDisabled) {
-            PlagueVars.playersWithDisabledHUD.remove(sender.player)
-        } else {
-            PlagueVars.playersWithDisabledHUD.add(sender.player)
-        }
+        playerHUDInfo.active = !playerHUDInfo.active
 
-        sender.sendSuccess("HUD will be ${if (wasDisabled) "shown" else "hidden"} in a moment.")
+        sender.sendSuccess("HUD will be ${if (playerHUDInfo.active) "shown" else "hidden"} in a moment.")
+    }
+
+    @Command(["resethud"])
+    @Description("Reset HUD.")
+    fun resetHUD(sender: PlayerCommandSender) {
+        PlagueVars.playersHUDInfo.remove(sender.player)
+
+        sender.sendSuccess("HUD will be reset in a moment.")
+    }
+
+    @Command(["changehud"])
+    @Description("Change HUD.")
+    suspend fun changeHUD(
+        sender: PlayerCommandSender,
+        align: Align? = null,
+        top: Int? = null,
+        left: Int? = null,
+        bottom: Int? = null,
+        right: Int? = null,
+    ) {
+        val playerHUDInfo = safeGetPlayerHUDInfo(sender.player)
+
+        playerHUDInfo.align = align ?: playerHUDInfo.align
+        playerHUDInfo.top = top ?: playerHUDInfo.top
+        playerHUDInfo.left = left ?: playerHUDInfo.left
+        playerHUDInfo.bottom = bottom ?: playerHUDInfo.bottom
+        playerHUDInfo.right = right ?: playerHUDInfo.right
+
+        updatePlayerHUD(sender.player)
+
+        sender.sendSuccess("HUD updated.")
     }
 
     private suspend fun updatePlayerHUD(player: Player) {
-        if (PlagueVars.playersWithDisabledHUD.contains(player)) return
+        val playerHUDInfo = safeGetPlayerHUDInfo(player)
+
+        if (!playerHUDInfo.active) return
 
         val state = PlagueVars.stateLock.withLock { PlagueVars.state }
 
@@ -811,7 +849,11 @@ class PlagueHandler : Handler {
             Run [accent]/state[white] for more detailed data.
             """.trimIndent(),
             durationToNextInfo.inWholeSeconds.toFloat(),
-            Align.topLeft, 200, 0, 0, 100
+            playerHUDInfo.align.arcAlign,
+            playerHUDInfo.top,
+            playerHUDInfo.left,
+            playerHUDInfo.bottom,
+            playerHUDInfo.right
         )
     }
 
@@ -935,8 +977,6 @@ class PlagueHandler : Handler {
 
     @EventHandler
     fun onPlayerLeave(event: EventType.PlayerLeave) {
-        PlagueVars.playersWithDisabledHUD.remove(event.player)
-
         val teamOwned = survivorTeamsData.entries.find { it.value.ownerUUID == event.player.uuid() }
 
         if (teamOwned == null) return

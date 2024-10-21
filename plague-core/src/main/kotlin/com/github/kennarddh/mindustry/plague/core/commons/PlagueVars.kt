@@ -7,6 +7,7 @@ import mindustry.content.Items
 import mindustry.gen.Player
 import mindustry.type.ItemStack
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -32,7 +33,7 @@ object PlagueVars {
             return totalMapSkipDuration
         }
 
-    val playersWithDisabledHUD: MutableSet<Player> = Collections.synchronizedSet(mutableSetOf<Player>())
+    val playersHUDInfo: MutableMap<Player, PlayerHUDInfo> = ConcurrentHashMap()
 
     /**
      * If this is true mono tree units made pre second phase will have their weapons restored when second phase.
