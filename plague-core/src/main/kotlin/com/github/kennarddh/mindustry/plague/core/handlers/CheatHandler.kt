@@ -152,8 +152,10 @@ class CheatHandler : Handler {
     fun changeTeam(
         sender: CommandSender,
         team: Team = if (sender is PlayerCommandSender) sender.player.team() else Vars.state.map.rules().defaultTeam,
-        player: Player,
+        player: Player? = if (sender is PlayerCommandSender) sender.player else null,
     ) {
+        if (player == null) return sender.sendError("Player cannot be null.")
+        
         runOnMindustryThread {
             player.team(team)
 
