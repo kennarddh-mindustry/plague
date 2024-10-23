@@ -1318,74 +1318,66 @@ class PlagueHandler : Handler {
         }
     }
 
-    @EventHandler
+    @EventHandler(true)
     fun onMonoUnitDestroyed(event: EventType.UnitDestroyEvent) {
         if (event.unit.type != UnitTypes.mono) return
 
-        runOnMindustryThread {
-            if (event.unit.team.core() != null) return@runOnMindustryThread
+        if (event.unit.team.core() == null) return
 
-            Call.label(
-                "${Iconc.unitMono} Created",
-                5f,
-                event.unit.x,
-                event.unit.y
-            )
+        Call.label(
+            "${Iconc.unitMono} Created",
+            5f,
+            event.unit.x,
+            event.unit.y
+        )
 
-            PlagueVars.monoReward.forEach {
-                val availableSpace = event.unit.team.core().storageCapacity - event.unit.team.items().get(it.item)
+        PlagueVars.monoReward.forEach {
+            val availableSpace = event.unit.team.core().storageCapacity - event.unit.team.items().get(it.item)
 
-                event.unit.team.items().add(it.item, it.amount.coerceAtMost(availableSpace))
-            }
+            event.unit.team.items().add(it.item, it.amount.coerceAtMost(availableSpace))
         }
     }
 
-    @EventHandler
+    @EventHandler(true)
     fun onMonoUnitCreate(event: EventType.UnitCreateEvent) {
         if (event.unit.type != UnitTypes.mono) return
 
-        runOnMindustryThread {
-            if (event.unit.team.core() == null) return@runOnMindustryThread
+        if (event.unit.team.core() == null) return
 
-            // .kill() instantly kill the unit makes it weird because the unit just disappear
-            event.unit.health = 0f
-            event.unit.dead = true
-        }
+        // .kill() instantly kill the unit makes it weird because the unit just disappear
+        event.unit.health = 0f
+        event.unit.dead = true
     }
 
-    @EventHandler
+    @EventHandler(true)
     suspend fun onUnitCreate(event: EventType.UnitCreateEvent) {
         if (event.unit.team.core() == null) return
 
         if (event.unit.team == Team.malis) {
             if (PlagueBanned.getCurrentPlagueBannedUnits().contains(event.unit.type)) {
-                runOnMindustryThread {
-                    Call.label(
-                        "${event.unit.type.localizedName} is banned.",
-                        5f,
-                        event.spawner.x,
-                        event.spawner.y
-                    )
+                Call.label(
+                    "${event.unit.type.localizedName} is banned.",
+                    5f,
+                    event.spawner.x,
+                    event.spawner.y
+                )
 
-                    // .kill() instantly kill the unit makes it weird because the unit just disappear
-                    event.unit.health = 0f
-                    event.unit.dead = true
-                }
+                // .kill() instantly kill the unit makes it weird because the unit just disappear
+                event.unit.health = 0f
+                event.unit.dead = true
             }
         } else if (isValidSurvivorTeam(event.unit.team)) {
             if (PlagueBanned.getCurrentSurvivorsBannedUnits().contains(event.unit.type)) {
-                runOnMindustryThread {
-                    Call.label(
-                        "${event.unit.type.localizedName} is banned.",
-                        5f,
-                        event.spawner.x,
-                        event.spawner.y
-                    )
+                Call.label(
+                    "${event.unit.type.localizedName} is banned.",
+                    5f,
+                    event.spawner.x,
+                    event.spawner.y
+                )
 
-                    // .kill() instantly kill the unit makes it weird because the unit just disappear
-                    event.unit.health = 0f
-                    event.unit.dead = true
-                }
+                // .kill() instantly kill the unit makes it weird because the unit just disappear
+                event.unit.health = 0f
+                event.unit.dead = true
             }
         }
     }
