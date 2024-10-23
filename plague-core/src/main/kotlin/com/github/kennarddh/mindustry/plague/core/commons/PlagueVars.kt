@@ -6,7 +6,6 @@ import kotlinx.datetime.Instant
 import mindustry.content.Items
 import mindustry.gen.Player
 import mindustry.type.ItemStack
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -43,4 +42,10 @@ object PlagueVars {
     val survivorsMinBuildRangeFromPlagueCoreInTiles: Int = 100
     val newSurvivorCoreMinDistanceFromPlagueCoreInTiles: Int = 70
     val survivorCoreMaxJoinDistanceInTiles: Int = 120
+
+    val playerHUDPresets: List<PlayerHUDPreset> = listOf(
+        PlayerHUDPreset(Align.TopLeft, 200, 0, 0, 100),
+        PlayerHUDPreset(Align.TopLeft, 300),
+        PlayerHUDPreset(Align.Top, 100)
+    )
 }

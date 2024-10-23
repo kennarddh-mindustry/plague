@@ -20,6 +20,7 @@ import com.github.kennarddh.mindustry.genesis.core.filters.FilterType
 import com.github.kennarddh.mindustry.genesis.core.filters.annotations.Filter
 import com.github.kennarddh.mindustry.genesis.core.handlers.Handler
 import com.github.kennarddh.mindustry.genesis.core.timers.annotations.TimerTask
+import com.github.kennarddh.mindustry.genesis.standard.commands.parameters.validations.numbers.GTE
 import com.github.kennarddh.mindustry.genesis.standard.extensions.infoPopup
 import com.github.kennarddh.mindustry.genesis.standard.extensions.setRules
 import com.github.kennarddh.mindustry.genesis.standard.handlers.tap.events.DoubleTap
@@ -764,11 +765,18 @@ class PlagueHandler : Handler {
         }
     }
 
-    fun getDefaultPlayerHUDInfo() = PlayerHUDInfo(
-        true,
-        Align.TopLeft,
-        200, 0, 0, 100
-    )
+    fun getDefaultPlayerHUDInfo(): PlayerHUDInfo {
+        val defaultPreset = PlagueVars.playerHUDPresets[0]
+
+        return PlayerHUDInfo(
+            true,
+            defaultPreset.align,
+            defaultPreset.top,
+            defaultPreset.left,
+            defaultPreset.bottom,
+            defaultPreset.right
+        )
+    }
 
     fun safeGetPlayerHUDInfo(player: Player): PlayerHUDInfo {
         return PlagueVars.playersHUDInfo.getOrPut(player, this::getDefaultPlayerHUDInfo)
@@ -784,7 +792,7 @@ class PlagueHandler : Handler {
         sender.sendSuccess("HUD will be ${if (playerHUDInfo.active) "shown" else "hidden"} in a moment.")
     }
 
-    @Command(["resethud"])
+    @Command(["hudreset"])
     @Description("Reset HUD.")
     fun resetHUD(sender: PlayerCommandSender) {
         PlagueVars.playersHUDInfo.remove(sender.player)
@@ -792,7 +800,44 @@ class PlagueHandler : Handler {
         sender.sendSuccess("HUD will be reset in a moment.")
     }
 
-    @Command(["changehud"])
+    @Command(["hudinfo"])
+    @Description("Reset HUD.")
+    fun hudInfo(sender: PlayerCommandSender) {
+        val playerHUDInfo = safeGetPlayerHUDInfo(sender.player)
+
+        sender.sendSuccess(
+            """
+            HUD Info:
+            Active: ${playerHUDInfo.active.toDisplayString()}
+            Align: ${playerHUDInfo.align.displayName}
+            Top: ${playerHUDInfo.top}
+            Left: ${playerHUDInfo.left}
+            Bottom: ${playerHUDInfo.bottom}
+            Right: ${playerHUDInfo.right}
+            """.trimIndent()
+        )
+    }
+
+    @Command(["hudpreset"])
+    @Description("Reset HUD.")
+    suspend fun hudPreset(sender: PlayerCommandSender, @GTE(0) presetIndex: Int) {
+        val preset = PlagueVars.playerHUDPresets.getOrNull(presetIndex)
+            ?: return sender.sendError("Preset with index $presetIndex not found.")
+
+        val playerHUDInfo = safeGetPlayerHUDInfo(sender.player)
+
+        playerHUDInfo.align = preset.align
+        playerHUDInfo.top = preset.top
+        playerHUDInfo.left = preset.left
+        playerHUDInfo.bottom = preset.bottom
+        playerHUDInfo.right = preset.right
+
+        updatePlayerHUD(sender.player)
+
+        sender.sendSuccess("HUD updated.")
+    }
+
+    @Command(["hudchange"])
     @Description("Change HUD.")
     suspend fun changeHUD(
         sender: PlayerCommandSender,
