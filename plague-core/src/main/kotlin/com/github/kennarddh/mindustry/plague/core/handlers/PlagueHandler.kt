@@ -196,9 +196,7 @@ class PlagueHandler : Handler {
      * This is a slight desync but not noticeable because on client they will see they can shoot but with 0 damage.
      */
     private fun clearUnitWeapons(unitType: UnitType) {
-        runOnMindustryThread {
-            unitType.weapons = Seq()
-        }
+        unitType.weapons = Seq()
     }
 
     private fun storeUnitWeapons(unitType: UnitType) {
@@ -621,38 +619,34 @@ class PlagueHandler : Handler {
         }
     }
 
-    @EventHandler
+    @EventHandler(true)
     suspend fun onCoreDestroyed(event: EventType.BlockDestroyEvent) {
-        runOnMindustryThread {
-            if (event.tile.build !is CoreBuild) return@runOnMindustryThread
+        if (event.tile.build !is CoreBuild) return
 
-            val coreBuild = event.tile.build as CoreBuild
+        val coreBuild = event.tile.build as CoreBuild
 
-            if (!survivorTeamsData.contains(coreBuild.team)) return@runOnMindustryThread
+        if (!survivorTeamsData.contains(coreBuild.team)) return
 
-            if (coreBuild.team.cores().size != 0) return@runOnMindustryThread
+        if (coreBuild.team.cores().size != 0) return
 
-            val teamData = Vars.state.teams[coreBuild.team]
+        val teamData = Vars.state.teams[coreBuild.team]
 
-            Call.sendMessage("[scarlet]'${coreBuild.team.name}' survivor team lost.")
+        Call.sendMessage("[scarlet]'${coreBuild.team.name}' survivor team lost.")
 
-            clearTeam(coreBuild.team)
+        clearTeam(coreBuild.team)
 
-            runBlocking {
-                teamData.players.forEach {
-                    changePlayerTeam(it, Team.malis)
+        teamData.players.forEach {
+            changePlayerTeam(it, Team.malis)
 
-                    it.unit().kill()
+            it.unit().kill()
 
-                    Call.sendMessage("[scarlet]'${it.plainName()}' has been infected.")
-                }
-            }
+            Call.sendMessage("[scarlet]'${it.plainName()}' has been infected.")
+        }
 
-            CoroutineScopes.Main.launch {
-                survivorTeamsData.remove(coreBuild.team)
+        CoroutineScopes.Main.launch {
+            survivorTeamsData.remove(coreBuild.team)
 
-                onSurvivorTeamDestroyed()
-            }
+            onSurvivorTeamDestroyed()
         }
     }
 
@@ -679,25 +673,23 @@ class PlagueHandler : Handler {
     }
 
 
-    @EventHandler
+    @EventHandler(true)
     fun survivorsMinimumBuildRangeFromPlagueCoreEventHandler(event: EventType.BuildSelectEvent) {
         if (event.builder.player == null) return
         if (!isValidSurvivorTeam(event.builder.team())) return
 
-        runOnMindustryThread {
-            for (core in Team.malis.cores()) {
-                if (core.dst(event.tile) < PlagueVars.survivorsMinBuildRangeFromPlagueCoreInTiles * Vars.tilesize) {
-                    event.tile.removeNet()
+        for (core in Team.malis.cores()) {
+            if (core.dst(event.tile) < PlagueVars.survivorsMinBuildRangeFromPlagueCoreInTiles * Vars.tilesize) {
+                event.tile.removeNet()
 
-                    event.builder.player.sendMessage("[scarlet]Building must be at least 100 tiles away from nearest plague's core.")
+                event.builder.player.sendMessage("[scarlet]Building must be at least 100 tiles away from nearest plague's core.")
 
-                    return@runOnMindustryThread
-                }
+                return
             }
         }
     }
 
-    @EventHandler
+    @EventHandler(true)
     suspend fun createSurvivorCoreEventHandler(event: EventType.BuildSelectEvent) {
         PlagueVars.stateLock.withLock {
             if (PlagueVars.state != PlagueState.Prepare) return
@@ -707,74 +699,68 @@ class PlagueHandler : Handler {
         if (event.builder.team() != Team.blue) return
         if (event.breaking) return
 
-        runOnMindustryThread {
-            event.tile.removeNet()
+        event.tile.removeNet()
 
-            if (!validPlace(Blocks.coreShard, event.tile))
-                return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Invalid core position.")
+        if (!validPlace(Blocks.coreShard, event.tile))
+            return event.builder.player.sendMessage("[scarlet]Invalid core position.")
 
-            for (core in Team.malis.cores()) {
-                if (core.dst(event.tile) < 100 * Vars.tilesize)
-                    return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Core must be at least 100 tiles away from nearest plague's core.")
-            }
+        for (core in Team.malis.cores()) {
+            if (core.dst(event.tile) < 100 * Vars.tilesize)
+                return event.builder.player.sendMessage("[scarlet]Core must be at least 100 tiles away from nearest plague's core.")
+        }
 
-            val (closestEnemyCoreInRange, distanceToClosestEnemyCoreInRange) = getClosestEnemyCore(
-                event.tile.x.toFloat() * Vars.tilesize,
-                event.tile.y.toFloat() * Vars.tilesize,
-                0f..((PlagueVars.survivorCoreMaxJoinDistanceInTiles * Vars.tilesize).toFloat()),
-                listOf(Team.malis)
+        val (closestEnemyCoreInRange, distanceToClosestEnemyCoreInRange) = getClosestEnemyCore(
+            event.tile.x.toFloat() * Vars.tilesize,
+            event.tile.y.toFloat() * Vars.tilesize,
+            0f..((PlagueVars.survivorCoreMaxJoinDistanceInTiles * Vars.tilesize).toFloat()),
+            listOf(Team.malis)
+        )
+
+        if (distanceToClosestEnemyCoreInRange < PlagueVars.newSurvivorCoreMinDistanceFromPlagueCoreInTiles * Vars.tilesize)
+            return event.builder.player.sendMessage("[scarlet]Core must be at least 70 tiles away from nearest survivor's core.")
+
+        if (closestEnemyCoreInRange != null) {
+            // Join closest survivor core team
+            if (teamsPlayersUUIDBlacklist[closestEnemyCoreInRange.team]?.contains(event.builder.player.uuid()) == true)
+                return event.builder.player.sendMessage("[scarlet]You are blacklisted from joining the team '${closestEnemyCoreInRange.team.name}' because you were kicked by the team owner.")
+
+            val survivorTeamData = survivorTeamsData[closestEnemyCoreInRange.team()]
+                ?: return event.builder.player.sendMessage("[scarlet]Error occurred. SurvivorTeamData == null when joining a team.")
+
+            if (survivorTeamData.locked)
+                return event.builder.player.sendMessage("[scarlet]The closest team '${closestEnemyCoreInRange.team.name}' is locked.")
+
+            survivorTeamData.playersUUID.add(event.builder.player.uuid())
+
+            changePlayerTeam(event.builder.player, closestEnemyCoreInRange.team)
+
+            event.tile.setNet(Blocks.coreFoundation, closestEnemyCoreInRange.team, 0)
+
+            Vars.state.teams.registerCore(event.tile.build as CoreBuild)
+
+            event.builder.player.unit().kill()
+        } else {
+            // Create new team
+            val newTeam = getNewEmptySurvivorTeam()
+                ?: return event.builder.player.sendMessage("[scarlet]No available team.")
+
+            survivorTeamsData[newTeam] = SurvivorTeamData(
+                event.builder.player.uuid(), mutableSetOf(event.builder.player.uuid())
             )
 
-            if (distanceToClosestEnemyCoreInRange < PlagueVars.newSurvivorCoreMinDistanceFromPlagueCoreInTiles * Vars.tilesize)
-                return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Core must be at least 70 tiles away from nearest survivor's core.")
+            teamsPlayersUUIDBlacklist[newTeam] = Collections.synchronizedSet(mutableSetOf())
 
-            if (closestEnemyCoreInRange != null) {
-                // Join closest survivor core team
-                if (teamsPlayersUUIDBlacklist[closestEnemyCoreInRange.team]?.contains(event.builder.player.uuid()) == true)
-                    return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]You are blacklisted from joining the team '${closestEnemyCoreInRange.team.name}' because you were kicked by the team owner.")
+            changePlayerTeam(event.builder.player, newTeam)
 
-                val survivorTeamData = survivorTeamsData[closestEnemyCoreInRange.team()]
-                    ?: return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]Error occurred. SurvivorTeamData == null when joining a team.")
+            event.tile.setNet(Blocks.coreFoundation, newTeam, 0)
 
-                if (survivorTeamData.locked)
-                    return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]The closest team '${closestEnemyCoreInRange.team.name}' is locked.")
+            Vars.state.teams.registerCore(event.tile.build as CoreBuild)
 
-                survivorTeamData.playersUUID.add(event.builder.player.uuid())
-
-                runBlocking {
-                    changePlayerTeam(event.builder.player, closestEnemyCoreInRange.team)
-                }
-
-                event.tile.setNet(Blocks.coreFoundation, closestEnemyCoreInRange.team, 0)
-
-                Vars.state.teams.registerCore(event.tile.build as CoreBuild)
-
-                event.builder.player.unit().kill()
-            } else {
-                // Create new team
-                val newTeam = getNewEmptySurvivorTeam()
-                    ?: return@runOnMindustryThread event.builder.player.sendMessage("[scarlet]No available team.")
-
-                survivorTeamsData[newTeam] = SurvivorTeamData(
-                    event.builder.player.uuid(), mutableSetOf(event.builder.player.uuid())
-                )
-
-                teamsPlayersUUIDBlacklist[newTeam] = Collections.synchronizedSet(mutableSetOf())
-
-                runBlocking {
-                    changePlayerTeam(event.builder.player, newTeam)
-                }
-
-                event.tile.setNet(Blocks.coreFoundation, newTeam, 0)
-
-                Vars.state.teams.registerCore(event.tile.build as CoreBuild)
-
-                Vars.state.rules.loadout.forEach {
-                    newTeam.core().items().add(it.item, it.amount.coerceAtMost(newTeam.core().storageCapacity))
-                }
-
-                event.builder.player.unit().kill()
+            Vars.state.rules.loadout.forEach {
+                newTeam.core().items().add(it.item, it.amount.coerceAtMost(newTeam.core().storageCapacity))
             }
+
+            event.builder.player.unit().kill()
         }
     }
 
@@ -857,91 +843,91 @@ class PlagueHandler : Handler {
         )
     }
 
-    @EventHandler
+    @EventHandler(true)
     @EventHandlerTrigger(Trigger.update)
     suspend fun onUpdate() {
         val plagueBannedUnits = PlagueBanned.getCurrentPlagueBannedUnits(false)
         val survivorsBannedUnits = PlagueBanned.getCurrentSurvivorsBannedUnits(false)
 
-        runOnMindustryThreadSuspended {
-            if (Vars.state.gameOver) return@runOnMindustryThreadSuspended
+        if (Vars.state.gameOver) return
 
-            // Make sure blue team units cannot be killed
-            Groups.unit.forEach {
-                if (it.team != Team.blue) return@forEach
+        // Make sure blue team units cannot be killed
+        Groups.unit.forEach {
+            if (it.team != Team.blue) return@forEach
 
-                it.health = Float.MAX_VALUE
-            }
+            it.health = Float.MAX_VALUE
+        }
 
-            // Make sure malis core cannot be destroyed
-            Team.malis.cores().forEach {
-                it.health = Float.MAX_VALUE
-            }
+        // Make sure malis core cannot be destroyed
+        Team.malis.cores().forEach {
+            it.health = Float.MAX_VALUE
+        }
 
-            Groups.build.forEach {
-                if (!(it.team == Team.malis || isValidSurvivorTeam(it.team))) return@forEach
+        Groups.build.forEach {
+            if (!(it.team == Team.malis || isValidSurvivorTeam(it.team))) return@forEach
 
-                val bannedUnits = if (it.team == Team.malis) plagueBannedUnits else survivorsBannedUnits
+            val bannedUnits = if (it.team == Team.malis) plagueBannedUnits else survivorsBannedUnits
 
-                if (it is UnitFactoryBuild) {
-                    if (it.currentPlan == -1) return@forEach
+            if (it is UnitFactoryBuild) {
+                if (it.currentPlan == -1) return@forEach
 
-                    val block = it.block as UnitFactory
+                val block = it.block as UnitFactory
 
-                    if (bannedUnits.contains(block.plans[it.currentPlan].unit)) {
-                        it.enabled(false)
-                    } else {
-                        it.enabled(true)
-                    }
-                } else if (it is ReconstructorBuild) {
-                    if (it.payload == null) return@forEach
+                if (bannedUnits.contains(block.plans[it.currentPlan].unit)) {
+                    it.enabled(false)
+                } else {
+                    it.enabled(true)
+                }
+            } else if (it is ReconstructorBuild) {
+                if (it.payload == null) return@forEach
 
-                    if (bannedUnits.contains(it.upgrade(it.payload.unit.type))) {
-                        it.enabled(false)
-                    } else {
-                        it.enabled(true)
-                    }
+                if (bannedUnits.contains(it.upgrade(it.payload.unit.type))) {
+                    it.enabled(false)
+                } else {
+                    it.enabled(true)
                 }
             }
+        }
 
-            if (lastMinuteUpdatesInMapTimeMinute != PlagueVars.mapTime.inWholeMinutes) {
-                lastMinuteUpdatesInMapTimeMinute = PlagueVars.mapTime.inWholeMinutes
+        if (lastMinuteUpdatesInMapTimeMinute != PlagueVars.mapTime.inWholeMinutes) {
+            lastMinuteUpdatesInMapTimeMinute = PlagueVars.mapTime.inWholeMinutes
 
-                val plagueUnitMultiplier = getPlagueUnitMultiplier()
+            val plagueUnitMultiplier = getPlagueUnitMultiplier()
 
-                Vars.state.rules.teams[Team.malis].unitDamageMultiplier =
-                    (Vars.state.map.rules().teams[Team.malis]?.unitDamageMultiplier
-                        ?: Vars.state.map.rules().unitDamageMultiplier) * plagueUnitMultiplier
+            Vars.state.rules.teams[Team.malis].unitDamageMultiplier =
+                (Vars.state.map.rules().teams[Team.malis]?.unitDamageMultiplier
+                    ?: Vars.state.map.rules().unitDamageMultiplier) * plagueUnitMultiplier
 
-                Vars.state.rules.teams[Team.malis].unitHealthMultiplier =
-                    (Vars.state.map.rules().teams[Team.malis]?.unitHealthMultiplier
-                        ?: Vars.state.map.rules().unitHealthMultiplier) * plagueUnitMultiplier
+            Vars.state.rules.teams[Team.malis].unitHealthMultiplier =
+                (Vars.state.map.rules().teams[Team.malis]?.unitHealthMultiplier
+                    ?: Vars.state.map.rules().unitHealthMultiplier) * plagueUnitMultiplier
 
-                runBlocking {
-                    updateAllPlayerSpecificRules()
+            runBlocking {
+                updateAllPlayerSpecificRules()
 
-                    Groups.player.forEach {
-                        updatePlayerHUD(it)
-                    }
+                Groups.player.forEach {
+                    updatePlayerHUD(it)
                 }
             }
         }
 
         // Like this to prevent locking state deadlock and also prevent locking mindustry thread
-        PlagueVars.stateLock.withLock {
-            if (PlagueVars.state == PlagueState.Prepare && PlagueVars.mapTime >= PlagueVars.state.startTime) {
-                CoroutineScopes.Main.launch { onFirstPhase() }
-            } else if (PlagueVars.state == PlagueState.PlayingFirstPhase && PlagueVars.mapTime >= PlagueVars.state.startTime) {
-                CoroutineScopes.Main.launch { onSecondPhase() }
-            } else if (PlagueVars.state == PlagueState.PlayingSecondPhase && PlagueVars.mapTime >= PlagueVars.state.startTime) {
-                CoroutineScopes.Main.launch { onSuddenDeath() }
-            } else {
-                // Empty else because this 'if' is seen as an expression
+        CoroutineScopes.Main.launch {
+            PlagueVars.stateLock.withLock {
+                if (PlagueVars.state == PlagueState.Prepare && PlagueVars.mapTime >= PlagueVars.state.startTime) {
+                    CoroutineScopes.Main.launch { onFirstPhase() }
+                } else if (PlagueVars.state == PlagueState.PlayingFirstPhase && PlagueVars.mapTime >= PlagueVars.state.startTime) {
+                    CoroutineScopes.Main.launch { onSecondPhase() }
+                } else if (PlagueVars.state == PlagueState.PlayingSecondPhase && PlagueVars.mapTime >= PlagueVars.state.startTime) {
+                    CoroutineScopes.Main.launch { onSuddenDeath() }
+                } else {
+                    // Empty else because this 'if' is seen as an expression
+                }
             }
         }
     }
 
-    @EventHandler
+    @EventHandler(true)
     suspend fun onPlay(event: EventType.PlayEvent) {
         PlagueVars.stateLock.withLock {
             PlagueVars.state = PlagueState.Prepare
@@ -961,38 +947,34 @@ class PlagueHandler : Handler {
         clearUnitWeapons(UnitTypes.quad)
         clearUnitWeapons(UnitTypes.oct)
 
-        runOnMindustryThread {
-            Team.malis.items()?.clear()
+        Team.malis.items()?.clear()
 
-            // Make sure power source cannot be destroyed and cannot be disabled
-            Vars.world.tiles.forEach {
-                if (it.build == null) return@forEach
-                if (it.build.block != Blocks.powerSource) return@forEach
-                if (it.build.team != Team.malis) return@forEach
+        // Make sure power source cannot be destroyed and cannot be disabled
+        Vars.world.tiles.forEach {
+            if (it.build == null) return@forEach
+            if (it.build.block != Blocks.powerSource) return@forEach
+            if (it.build.team != Team.malis) return@forEach
 
-                it.build.health = Float.MAX_VALUE
-            }
+            it.build.health = Float.MAX_VALUE
         }
     }
 
-    @EventHandler
+    @EventHandler(true)
     fun onPlayerLeave(event: EventType.PlayerLeave) {
         val teamOwned = survivorTeamsData.entries.find { it.value.ownerUUID == event.player.uuid() }
 
         if (teamOwned == null) return
 
-        runOnMindustryThread {
-            val teamData = Vars.state.teams[teamOwned.key]
+        val teamData = Vars.state.teams[teamOwned.key]
 
-            if (teamData.players.size == 0)
-                return@runOnMindustryThread
+        if (teamData.players.size == 0)
+            return
 
-            // Team's owner is not given to other player because the owner might join again.
-            Groups.player.filter { survivorTeamsData[teamOwned.key]?.playersUUID?.contains(it.uuid()) ?: false }
-                .forEach {
-                    it.sendMessage("[accent]Team owner left.")
-                }
-        }
+        // Team's owner is not given to other player because the owner might join again.
+        Groups.player.filter { survivorTeamsData[teamOwned.key]?.playersUUID?.contains(it.uuid()) ?: false }
+            .forEach {
+                it.sendMessage("[accent]Team owner left.")
+            }
     }
 
     suspend fun restart(winner: Team) {
@@ -1123,14 +1105,12 @@ class PlagueHandler : Handler {
     /**
      * This is also called when player is done loading new map
      */
-    @EventHandler
+    @EventHandler(true)
     fun onPlayerConnectionConfirmed(event: EventType.PlayerConnectionConfirmed) {
-        runOnMindustryThread {
-            if (!event.player.dead()) return@runOnMindustryThread
+        if (!event.player.dead()) return
 
-            runBlocking {
-                setupPlayer(event.player)
-            }
+        runBlocking {
+            setupPlayer(event.player)
         }
     }
 
@@ -1270,42 +1250,40 @@ class PlagueHandler : Handler {
         }
     }
 
-    @EventHandler
+    @EventHandler(true)
     fun onDoubleTap(event: DoubleTap) {
         if (!isValidSurvivorTeam(event.player.team())) return
 
-        runOnMindustryThread {
-            if (event.tile.build !is StorageBuild) return@runOnMindustryThread
+        if (event.tile.build !is StorageBuild) return
 
-            if (event.tile.block().name != "vault") return@runOnMindustryThread
+        if (event.tile.block().name != "vault") return
 
-            if (event.tile.build.team != event.player.team()) return@runOnMindustryThread
+        if (event.tile.build.team != event.player.team()) return
 
-            val vault = event.tile.build as StorageBuild
+        val vault = event.tile.build as StorageBuild
 
-            if (vault.linkedCore != null) {
-                event.tile.build.tile.setNet(Blocks.coreShard, event.tile.team(), 0)
-
-                return@runOnMindustryThread
-            }
-
-            val enoughResources = PlagueVars.newCoreCost.all { vault.items().get(it.item) >= it.amount }
-
-            if (!enoughResources)
-                return@runOnMindustryThread event.player.sendMessage("[scarlet]Not enough resources to convert vault to core.")
-
-            PlagueVars.newCoreCost.forEach {
-                vault.items().remove(it)
-            }
-
-            val remainingItems = vault.items()
-
+        if (vault.linkedCore != null) {
             event.tile.build.tile.setNet(Blocks.coreShard, event.tile.team(), 0)
 
-            // Refund remaining items in vault if it wasn't linked to core
-            remainingItems.each { item, amount ->
-                event.tile.team().items().add(item, amount)
-            }
+            return
+        }
+
+        val enoughResources = PlagueVars.newCoreCost.all { vault.items().get(it.item) >= it.amount }
+
+        if (!enoughResources)
+            return event.player.sendMessage("[scarlet]Not enough resources to convert vault to core.")
+
+        PlagueVars.newCoreCost.forEach {
+            vault.items().remove(it)
+        }
+
+        val remainingItems = vault.items()
+
+        event.tile.build.tile.setNet(Blocks.coreShard, event.tile.team(), 0)
+
+        // Refund remaining items in vault if it wasn't linked to core
+        remainingItems.each { item, amount ->
+            event.tile.team().items().add(item, amount)
         }
     }
 
