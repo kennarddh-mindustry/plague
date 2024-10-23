@@ -48,4 +48,6 @@ object PlagueVars {
         PlayerHUDPreset(Align.TopLeft, 300),
         PlayerHUDPreset(Align.Top, 100)
     )
+
+    val playerHUDPresetDefaultIndex: Int = 0
 }

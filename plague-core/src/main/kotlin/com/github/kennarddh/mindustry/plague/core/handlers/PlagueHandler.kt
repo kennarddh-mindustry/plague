@@ -766,7 +766,7 @@ class PlagueHandler : Handler {
     }
 
     fun getDefaultPlayerHUDInfo(): PlayerHUDInfo {
-        val defaultPreset = PlagueVars.playerHUDPresets[0]
+        val defaultPreset = PlagueVars.playerHUDPresets[PlagueVars.playerHUDPresetDefaultIndex]
 
         return PlayerHUDInfo(
             true,
